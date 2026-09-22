@@ -8,7 +8,6 @@ const app = express();
 const server = http.createServer(app);
 
 // Use connection pooling to interact cleanly with Render Postgres
-// During local testing, this will gracefully fall back if DATABASE_URL is not set yet
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/tetris', 
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
@@ -54,25 +53,23 @@ io.on('connection', (socket) => {
     // PROFILE LOGIN: Check Render SQL database or insert a fresh ledger profile
     socket.on('player-login', async ({ username }) => {
         try {
-            let res = await pool.query('SELECT * FROM players WHERE username = $1', [username]);
+            let res = await pool.query('SELECT * FROM players WHERE username = \$1', [username]);
             let playerChips = 250;
 
             if (res && res.rows && res.rows.length > 0) {
-                playerChips = res.rows[0].chips; // FIX: Added [0] index to read row data safely
+                playerChips = res.rows[0].chips; // Safely read row indexes
                 console.log(`💾 Loaded SQL Profile: ${username} (${playerChips} Chips)`);
             } else {
                 try {
-                    await pool.query('INSERT INTO players (username, chips) VALUES ($1, $2)', [username, 250]);
-
+                    await pool.query('INSERT INTO players (username, chips) VALUES (\$1, \$2)', [username, 250]);
                     console.log(`🆕 Registered New SQL Profile: ${username} (250 Chips)`);
                 } catch(e) {
-                    // Local fallback handler if database engine is missing entirely
+                    // Local fallback catch
                 }
             }
 
             socket.emit('init-lobby', { rooms, chat: lobbyChat, username, chips: playerChips });
         } catch (err) {
-            // Local sandbox fallback so you can continue testing without a running local database
             console.log(`🎮 Sandbox Mode: Logging in user ${username} offline.`);
             socket.emit('init-lobby', { rooms, chat: lobbyChat, username, chips: 250 });
         }
@@ -105,8 +102,7 @@ io.on('connection', (socket) => {
     // Sync chip balances into Render persistent tables when updates fire
     socket.on('update-wallet-chips', async ({ username, finalChips }) => {
         try {
-            await pool.query('UPDATE players SET chips = $1 WHERE username = $2', [finalChips, username]);
-
+            await pool.query('UPDATE players SET chips = \$1 WHERE username = \$2', [finalChips, username]);
             console.log(`💰 Render SQL Wallet Saved: ${username} -> ${finalChips} Chips`);
         } catch (err) {
             // Silently catch local fallbacks
@@ -134,4 +130,4 @@ io.on('connection', (socket) => {
 });
 
 const PORT = process.env.PORT || 3050;
-server.listen(PORT, () => console.log(`🚀 Server listening smoothly on http://localhost:${PORT}`));
+server.listen(PORT, () => console.log(`🚀 Server listening smoothly on port ${PORT}`));

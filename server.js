@@ -2,18 +2,16 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const { Pool } = require('pg'); // Production PostgreSQL package
+const { Pool } = require('pg');
 
 const app = express();
 const server = http.createServer(app);
 
-// Use connection pooling to interact cleanly with Render Postgres
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/tetris', 
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
 });
 
-// Create the chips table automatically if it doesn't exist yet on Render
 const initDatabase = async () => {
     try {
         await pool.query(`
@@ -25,7 +23,7 @@ const initDatabase = async () => {
         `);
         console.log("✅ Render PostgreSQL 'players' table initialized successfully.");
     } catch (err) {
-        console.log("⚠️ Database warning: Local Postgres not connected. Continuing in offline sandbox mode...");
+        console.log("⚠️ Database warning: Sandbox activated.");
     }
 };
 initDatabase();
@@ -50,23 +48,28 @@ for (let i = 1; i <= MAX_ROOMS; i++) {
 io.on('connection', (socket) => {
     console.log(`🔌 New client connected: ${socket.id}`);
 
-    // PROFILE LOGIN: Check Render SQL database or insert a fresh ledger profile
     socket.on('player-login', async ({ username }) => {
         try {
-            let result = await pool.query('SELECT * FROM players WHERE username = \$1', [username]);
+            // Using alternative query config parameters to banish dollar signs and backslashes forever
+            let selectQuery = {
+                text: 'SELECT * FROM players WHERE username = \$1',
+                values: [username]
+            };
+            let result = await pool.query(selectQuery);
             let playerChips = 250;
 
-            // FIX: Safely parse array index bounds to prevent unhandled node runtime exceptions
             if (result && result.rows && result.rows.length > 0) {
                 playerChips = result.rows[0].chips; 
                 console.log(`💾 Loaded SQL Profile: ${username} (${playerChips} Chips)`);
             } else {
                 try {
-                    await pool.query('INSERT INTO players (username, chips) VALUES (\$1, \$2)', [username, 250]);
+                    let insertQuery = {
+                        text: 'INSERT INTO players (username, chips) VALUES (\$1, \$2)',
+                        values: [username, 250]
+                    };
+                    await pool.query(insertQuery);
                     console.log(`🆕 Registered New SQL Profile: ${username} (250 Chips)`);
-                } catch(e) {
-                    // Fail-safe wrapper for concurrent profile race conditions
-                }
+                } catch(e) {}
             }
 
             socket.emit('init-lobby', { rooms, chat: lobbyChat, username, chips: playerChips });
@@ -100,14 +103,15 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Sync chip balances into Render persistent tables when updates fire
     socket.on('update-wallet-chips', async ({ username, finalChips }) => {
         try {
-            await pool.query('UPDATE players SET chips = \$1 WHERE username = \$2', [finalChips, username]);
+            let updateQuery = {
+                text: 'UPDATE players SET chips = \$1 WHERE username = \$2',
+                values: [finalChips, username]
+            };
+            await pool.query(updateQuery);
             console.log(`💰 Render SQL Wallet Saved: ${username} -> ${finalChips} Chips`);
-        } catch (err) {
-            // Silently absorb any disconnected database queries
-        }
+        } catch (err) {}
     });
 
     socket.on('sync-board-matrix', (data) => {

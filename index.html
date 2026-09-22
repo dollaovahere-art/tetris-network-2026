@@ -13,79 +13,141 @@
             --text: #e94560; 
             --white: #fff; 
         }
-        body { 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            background: var(--bg); 
-            color: var(--white); 
-            margin: 0; 
-            padding: 10px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Strict lock preventing all page layout scrolls */
+            background: var(--bg);
+            color: var(--white);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
             user-select: none;
             -webkit-user-select: none;
-            touch-action: manipulation;
+            touch-action: none; /* Disables browser multi-tap zooms */
         }
         h1 {
             color: var(--text);
             text-shadow: 0 0 10px rgba(233, 69, 96, 0.4);
-            margin: 5px 0;
-            font-size: 24px;
+            margin: 5px 0 0 0;
+            font-size: 18px;
+            text-align: center;
+            flex-shrink: 0;
         }
         .hidden { display: none !important; }
-        .container { display: flex; gap: 15px; width: 100%; max-width: 1200px; margin-top: 5px; }
-        .main-panel { flex: 3; background: var(--panel); border: 2px solid var(--accent); padding: 15px; border-radius: 10px; min-height: 450px; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
-        .side-panel { flex: 1; background: var(--panel); border: 2px solid var(--accent); padding: 15px; border-radius: 10px; display: flex; flex-direction: column; height: 80vh; }
         
-        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-top: 15px; max-height: 400px; overflow-y: auto; }
-        .room-card { background: var(--accent); padding: 12px; border-radius: 8px; text-align: center; cursor: pointer; transition: all 0.2s ease; }
-        .room-card:hover { border-color: var(--text); background: #123c6d; transform: translateY(-2px); }
+        /* Core Split Framework Configuration */
+        .container { 
+            display: flex; 
+            flex-direction: row; 
+            gap: 10px; 
+            width: 100%; 
+            height: calc(100% - 30px); /* Fill entire remainder height space safely */
+            box-sizing: border-box;
+            padding: 10px;
+        }
+        .main-panel { 
+            flex: 2; 
+            background: var(--panel); 
+            border: 2px solid var(--accent); 
+            padding: 10px; 
+            border-radius: 10px; 
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+        }
+        .side-panel { 
+            flex: 1; 
+            background: var(--panel); 
+            border: 2px solid var(--accent); 
+            padding: 10px; 
+            border-radius: 10px; 
+            display: flex; 
+            flex-direction: column; 
+            height: 100%; 
+            box-sizing: border-box;
+            overflow: hidden;
+        }
         
-        .arena-layout { display: flex; gap: 15px; justify-content: center; align-items: flex-start; margin-top: 10px; }
-        canvas { background: #000; border: 3px solid var(--accent); border-radius: 5px; display: block; }
+        /* Lobby Room Matrix Adjustments */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 10px; overflow-y: auto; flex-grow: 1; }
+        .room-card { background: var(--accent); padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; }
         
-        /* Mobile Touch D-Pad Layout Controls */
+        /* Mathematical Responsive Scaling Arena Wrapper */
+        .arena-layout { 
+            display: flex; 
+            gap: 10px; 
+            justify-content: center; 
+            align-items: center; 
+            flex-grow: 1;
+            min-height: 0; /* Important fix allowing boxes to scale under flex parents */
+        }
+        .canvas-wrapper {
+            height: 100%;
+            max-height: 50vh; /* Limits board canvas height footprints on tiny mobile views */
+            aspect-ratio: 10 / 20;
+        }
+        canvas#tetris-canvas { 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            border: 2px solid var(--accent); 
+            border-radius: 5px; 
+            display: block; 
+        }
+        
+        /* Mobile Touch Screen Control Grid */
         .mobile-controls-dpad {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
+            gap: 8px;
             width: 100%;
-            max-width: 260px;
-            margin: 15px auto 0 auto;
+            max-width: 220px;
+            margin: 8px auto 0 auto;
+            flex-shrink: 0;
         }
         .btn-touch {
             background: var(--accent);
             color: #fff;
-            border: 2px solid #1f4068;
-            border-radius: 12px;
-            padding: 18px 0;
-            font-size: 22px;
+            border: 1px solid #1f4068;
+            border-radius: 8px;
+            padding: 12px 0;
+            font-size: 20px;
             font-weight: bold;
             cursor: pointer;
             text-align: center;
-            box-shadow: 0 4px 0 #0b1d3a;
-            transition: transform 0.05s active;
+            box-shadow: 0 3px 0 #0b1d3a;
         }
         .btn-touch:active {
-            transform: translateY(3px);
-            box-shadow: 0 1px 0 #0b1d3a;
             background: var(--text);
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #0b1d3a;
         }
         
-        .chat-logs { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 5px; padding: 10px; margin-bottom: 10px; font-size: 14px; border: 1px solid var(--accent); }
-        .chat-input-row { display: flex; gap: 5px; }
-        .chat-input-row input { flex-grow: 1; padding: 10px; border-radius: 5px; border: none; background: #0b132b; color: #fff; }
+        /* Absolute No-Scroll Chat UI Parameters */
+        .chat-logs { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 5px; padding: 8px; margin-bottom: 8px; font-size: 12px; border: 1px solid var(--accent); min-height: 0; }
+        .chat-input-row { display: flex; gap: 5px; flex-shrink: 0; }
+        .chat-input-row input { flex-grow: 1; padding: 8px; border-radius: 4px; border: none; background: #0b132b; color: #fff; font-size: 13px; }
+        .chat-input-row button { width: auto; padding: 8px 12px; margin: 0; font-size: 13px; }
         
-        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin-top: 15px; }
-        .spec-view-card { background: #000; border: 2px solid var(--accent); padding: 5px; font-size: 11px; text-align: center; }
+        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 10px; overflow-y: auto; }
+        .spec-view-card { background: #000; border: 1px solid var(--accent); padding: 4px; font-size: 10px; text-align: center; }
         
-        button { background: var(--text); color: white; border: none; padding: 12px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; font-size: 15px; }
-        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: var(--accent); color: #fff; border: 1px solid #222; border-radius: 5px; box-sizing: border-box; }
+        button { background: var(--text); color: white; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; flex-shrink: 0; }
+        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: var(--accent); color: #fff; border: 1px solid #222; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
         
-        @media (max-width: 768px) {
-            .container { flex-direction: column; }
-            .side-panel { height: 300px; }
-            .arena-layout { flex-direction: column; align-items: center; }
+        /* Mobile Portrait Cross-Platform Overrides */
+        @media (max-width: 580px) {
+            .container { flex-direction: column; gap: 8px; }
+            .main-panel { flex: 3; }
+            .side-panel { flex: 1.2; min-height: 0; } /* Enforces chat box to split screen natively */
+            h1 { font-size: 15px; }
+            .arena-layout { gap: 8px; }
+            .canvas-wrapper { max-height: 38vh; } /* Prevents game from pushing chat down offscreen */
         }
     </style>
 </head>
@@ -94,48 +156,48 @@
     <h1>Tetris Arcade Network Showdown</h1>
 
     <div class="container">
+        <!-- LEFT PANEL (PROFILE / LOBBY ROOMS / ARENA) -->
         <div class="main-panel">
             
-            <!-- 1. REGISTRATION PANEL -->
-            <div id="panel-login">
-                <h2>Profile Registration</h2>
-                <label>Choose Username:</label>
+            <!-- 1. REGISTRATION CARD -->
+            <div id="panel-login" style="margin: auto; width: 100%; max-width: 320px;">
+                <h2 style="margin-top:0; font-size:18px; text-align:center;">Profile Registration</h2>
+                <label style="font-size:13px;">Choose Username:</label>
                 <input type="text" id="user-name-input" value="Player_1">
                 <button id="btn-connect" onclick="connectToLobbyNetwork()">Connect to Game Servers</button>
             </div>
 
-            <!-- 2. ROOM LOBBY -->
-            <div id="panel-lobby" class="hidden">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                    <h2>Active Server Game Rooms</h2>
-                    <button onclick="startPracticeMode()" style="width:auto; background:#27ae60;">Practice ⏱</button>
+            <!-- 2. NETWORK ROOM HUB -->
+            <div id="panel-lobby" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <h3 style="margin:0; font-size:14px;">Active Game Rooms</h3>
+                    <button onclick="startPracticeMode()" style="background:#27ae60; padding:5px 10px; font-size:12px;">Practice ⏱</button>
                 </div>
                 <div class="room-grid" id="room-list-container"></div>
             </div>
 
-            <!-- 3. ACTIVE ARENA VIEW WITH MOBILITY DPAD -->
-            <div id="panel-game" class="hidden">
-                <div style="display:flex; justify-content:space-between; font-size:16px; margin-bottom:10px; border-bottom:1px solid var(--accent); padding-bottom:5px;">
+            <!-- 3. FLUID NON-SCROLL GAME ARENA -->
+            <div id="panel-game" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+                <div style="display:flex; justify-content:space-between; font-size:13px; border-bottom:1px solid var(--accent); padding-bottom:3px; flex-shrink:0;">
                     <div>Match: <span id="txt-room-id" style="color:var(--text); font-weight:bold;">-</span></div>
                     <div>Time: <span id="txt-match-timer" style="color:var(--text); font-weight:bold;">00:00</span></div>
                 </div>
 
                 <div class="arena-layout">
-                    <div>
+                    <div class="canvas-wrapper">
                         <canvas id="tetris-canvas" width="240" height="480"></canvas>
                     </div>
-                    <div style="text-align:center; min-width:110px;">
-                        <h5 style="margin: 0 0 5px 0;">Next</h5>
-                        <canvas id="preview-canvas" width="80" height="80" style="margin:0 auto;"></canvas>
-                        <div style="margin-top:10px; background:var(--accent); padding:8px; border-radius:5px; font-size:13px; text-align:left;">
-                            <div>Score: <span id="lbl-score" style="font-weight:bold;color:var(--text);">0</span></div>
-                            <div>Lvl: <span id="lbl-level" style="font-weight:bold;color:var(--text);">1</span></div>
+                    <div style="text-align:center; min-width:85px; display:flex; flex-direction:column; gap:5px; height:100%; justify-content:center;">
+                        <h6 style="margin: 0; font-size:11px; text-transform:uppercase; color:#aaa;">Next</h6>
+                        <canvas id="preview-canvas" width="60" height="60" style="margin:0 auto; background:#000; border:1px solid var(--accent); border-radius:4px;"></canvas>
+                        <div style="background:var(--accent); padding:5px; border-radius:4px; font-size:11px; text-align:left; line-height:1.3;">
+                            <div>Score:<br><span id="lbl-score" style="font-weight:bold;color:var(--text);">0</span></div>
                         </div>
-                        <button onclick="exitActiveRoom()" style="background:#7f8c8d; margin-top:15px; padding:6px; font-size:12px;">Quit</button>
+                        <button onclick="exitActiveRoom()" style="background:#7f8c8d; padding:4px; font-size:11px; margin-top:5px;">Quit</button>
                     </div>
                 </div>
 
-                <!-- Touchscreen Button Array for Mobile Browsers -->
+                <!-- Touch Control Array -->
                 <div class="mobile-controls-dpad">
                     <div class="btn-touch" onclick="triggerTouchAction('left')">◀</div>
                     <div class="btn-touch" onclick="triggerTouchAction('rotate')">↻</div>
@@ -146,22 +208,23 @@
                 </div>
             </div>
 
-            <!-- 4. SPECTATOR HUB -->
-            <div id="panel-spectate" class="hidden">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <h3>Live Monitor Panel</h3>
-                    <button onclick="exitActiveRoom()" style="background:#7f8c8d; width:auto; padding:6px 12px;">Exit</button>
+            <!-- 4. MONITOR CAPTURES -->
+            <div id="panel-spectate" class="hidden" style="display:flex; flex-direction:column; height:100%;">
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <h4 style="margin:0; font-size:13px;">Live Monitor</h4>
+                    <button onclick="exitActiveRoom()" style="background:#7f8c8d; padding:4px 8px; font-size:11px;">Exit</button>
                 </div>
                 <div class="spec-grid" id="spectator-matrix-grid"></div>
             </div>
         </div>
 
+        <!-- RIGHT PANEL / BOTTOM SPLIT (LOBBY CHAT WINDOW) -->
         <div class="side-panel">
-            <h3 style="margin-top:0; border-bottom:1px solid var(--accent); padding-bottom:5px; color:var(--text);">Chat Lobby</h3>
+            <h4 style="margin:0 0 5px 0; border-bottom:1px solid var(--accent); padding-bottom:3px; color:var(--text); font-size:13px; flex-shrink:0;">Lobby Chat</h4>
             <div class="chat-logs" id="chat-box-logs"></div>
             <div class="chat-input-row">
-                <input type="text" id="chat-text-input" placeholder="Type message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                <button onclick="sendChatMessage()" style="width:auto; margin:0;">Send</button>
+                <input type="text" id="chat-text-input" placeholder="Message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()">Send</button>
             </div>
         </div>
     </div>
@@ -175,13 +238,13 @@
         const ROW_COUNT = 20, COL_COUNT = 10, BLOCK_SIZE = 24;
         
         const SHAPES = {
-            'I': [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
-            'J': [[1,0,0],[1,1,1],[0,0,0]],
-            'L': [[0,0,1],[1,1,1],[0,0,0]],
-            'O': [[1,1],[1,1]],
-            'S': [[0,1,1],[1,1,0],[0,0,0]],
-            'T': [[0,1,0],[1,1,1],[0,0,0]],
-            'Z': [[1,1,0],[0,1,1],[0,0,0]]
+            'I': [,,,],
+            'J': [,,],
+            'L': [,,],
+            'O': [,],
+            'S': [,,],
+            'T': [,,],
+            'Z': [,,]
         };
         const COLORS = { 'I': '#00f0f0', 'J': '#0000f0', 'L': '#f0a000', 'O': '#f0f000', 'S': '#00f000', 'T': '#a000f0', 'Z': '#f00000' };
 
@@ -229,7 +292,7 @@
                 const card = document.createElement('div');
                 card.className = 'room-card';
                 card.onclick = () => joinRoomIdSlot(r.id);
-                card.innerHTML = `<h4>Room ${r.id}</h4><div style="font-size:12px;color:#bbb;">Players: ${r.players.length}/6</div>`;
+                card.innerHTML = `<h5 style="margin:0; font-size:13px;">Room ${r.id}</h5><div style="font-size:11px;color:#bbb;">${r.players.length}/6</div>`;
                 container.appendChild(card);
             });
         }
@@ -355,7 +418,7 @@
             const matrix = SHAPES[nextPieceKey];
             for(let r=0; r<matrix.length; r++) {
                 for(let c=0; c<matrix[r].length; c++) {
-                    if(matrix[r][c]) prevCtx.fillRect(c*15 + 10, r*15 + 10, 14, 14);
+                    if(matrix[r][c]) prevCtx.fillRect(c*12 + 6, r*12 + 6, 11, 11);
                 }
             }
         }

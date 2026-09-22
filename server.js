@@ -50,12 +50,7 @@ io.on('connection', (socket) => {
 
     socket.on('player-login', async ({ username }) => {
         try {
-            // Using alternative query config parameters to banish dollar signs and backslashes forever
-            let selectQuery = {
-                text: 'SELECT * FROM players WHERE username = \$1',
-                values: [username]
-            };
-            let result = await pool.query(selectQuery);
+            let result = await pool.query('SELECT * FROM players WHERE username = \$1', [username]);
             let playerChips = 250;
 
             if (result && result.rows && result.rows.length > 0) {
@@ -63,11 +58,7 @@ io.on('connection', (socket) => {
                 console.log(`💾 Loaded SQL Profile: ${username} (${playerChips} Chips)`);
             } else {
                 try {
-                    let insertQuery = {
-                        text: 'INSERT INTO players (username, chips) VALUES (\$1, \$2)',
-                        values: [username, 250]
-                    };
-                    await pool.query(insertQuery);
+                    await pool.query('INSERT INTO players (username, chips) VALUES (\$1, \$2)', [username, 250]);
                     console.log(`🆕 Registered New SQL Profile: ${username} (250 Chips)`);
                 } catch(e) {}
             }
@@ -105,11 +96,7 @@ io.on('connection', (socket) => {
 
     socket.on('update-wallet-chips', async ({ username, finalChips }) => {
         try {
-            let updateQuery = {
-                text: 'UPDATE players SET chips = \$1 WHERE username = \$2',
-                values: [finalChips, username]
-            };
-            await pool.query(updateQuery);
+            await pool.query('UPDATE players SET chips = \$1 WHERE username = \$2', [finalChips, username]);
             console.log(`💰 Render SQL Wallet Saved: ${username} -> ${finalChips} Chips`);
         } catch (err) {}
     });

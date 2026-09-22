@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Arcade Network Showdown</title>
+    <!-- Loads the network socket client library natively from your server -->
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        :root { 
+            --bg: #1a1a2e; 
+            --panel: #16213e; 
+            --accent: #0f3460; 
+            --text: #e94560; 
+            --white: #fff; 
+        }
+        body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            background: var(--bg); 
+            color: var(--white); 
+            margin: 0; 
+            padding: 15px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            user-select: none;
+        }
+        h1 {
+            color: var(--text);
+            text-shadow: 0 0 10px rgba(233, 69, 96, 0.4);
+            margin: 10px 0;
+        }
+        .hidden { display: none !important; }
+        .container { display: flex; gap: 20px; width: 100%; max-width: 1200px; margin-top: 10px; }
+        .main-panel { flex: 3; background: var(--panel); border: 2px solid var(--accent); padding: 20px; border-radius: 10px; min-height: 500px; box-shadow: 0 0 15px rgba(0,0,0,0.4); }
+        .side-panel { flex: 1; background: var(--panel); border: 2px solid var(--accent); padding: 15px; border-radius: 10px; display: flex; flex-direction: column; height: 75vh; }
+        
+        /* Lobby Room System Styles */
+        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; max-height: 450px; overflow-y: auto; padding-right: 5px; }
+        .room-card { background: var(--accent); padding: 15px; border-radius: 8px; text-align: center; cursor: pointer; border: 2px solid transparent; transition: all 0.2s ease; }
+        .room-card:hover { border-color: var(--text); background: #123c6d; transform: translateY(-2px); }
+        
+        /* Game Arena Canvas Panel */
+        .arena-layout { display: flex; gap: 20px; justify-content: center; align-items: flex-start; margin-top: 15px; }
+        canvas { background: #000; border: 4px solid var(--accent); border-radius: 5px; display: block; }
+        
+        /* Side Controls & Chat Logs */
+        .chat-logs { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 5px; padding: 10px; margin-bottom: 10px; font-size: 14px; border: 1px solid var(--accent); word-break: break-word; }
+        .chat-input-row { display: flex; gap: 5px; }
+        .chat-input-row input { flex-grow: 1; padding: 10px; border-radius: 5px; border: none; background: #0b132b; color: #fff; }
+        
+        /* Spectator Multi Grid Panels */
+        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; margin-top: 15px; }
+        .spec-view-card { background: #000; border: 2px solid var(--accent); padding: 8px; font-size: 12px; text-align: center; border-radius: 5px; }
+        
+        button { background: var(--text); color: white; border: none; padding: 12px 15px; font-weight: bold; border-radius: 5px; cursor: pointer; width: 100%; transition: background 0.2s; font-size: 15px; }
+        button:hover { background: #ff527b; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 15px; background: var(--accent); color: #fff; border: 1px solid #222; border-radius: 5px; box-sizing: border-box; font-size: 15px; }
+    </style>
+</head>
+<body>
+
+    <h1>Tetris Arcade Network Showdown</h1>
+
+    <div class="container">
+        <!-- LEFT SYSTEM HANDLER PANEL -->
+        <div class="main-panel">
+            
+            <!-- 1. PROFILE REGISTRATION SCREEN -->
+            <div id="panel-login">
+                <h2>Profile Registration</h2>
+                <label>Choose Username:</label>
+                <input type="text" id="user-name-input" value="Player_1">
+                <button id="btn-connect" onclick="connectToLobbyNetwork()">Connect to Game Servers</button>
+            </div>
+
+            <!-- 2. MULTI-ROOM LOBBY SELECTION HUB -->
+            <div id="panel-lobby" class="hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                    <h2>Active Server Game Rooms</h2>
+                    <button onclick="startPracticeMode()" style="width:auto; background:#27ae60;">Enter 1-Min Practice Mode ⏱</button>
+                </div>
+                <div class="room-grid" id="room-list-container"></div>
+            </div>
+
+            <!-- 3. ACTIVE GAME PLAYING ARENA -->
+            <div id="panel-game" class="hidden">
+                <div style="display:flex; justify-content:space-between; font-size:18px; margin-bottom:15px; border-bottom:1px solid var(--accent); padding-bottom:10px;">
+                    <div>Match: <span id="txt-room-id" style="color:var(--text); font-weight:bold;">-</span></div>
+                    <div>User: <span id="txt-active-turn" style="color:var(--text); font-weight:bold;">-</span></div>
+                    <div>Time Left: <span id="txt-match-timer" style="color:var(--text); font-weight:bold;">00:00</span></div>
+                </div>
+
+                <div class="arena-layout">
+                    <div>
+                        <canvas id="tetris-canvas" width="240" height="480"></canvas>
+                    </div>
+                    <div>
+                        <h4 style="margin: 0 0 5px 0;">Next Block</h4>
+                        <canvas id="preview-canvas" width="96" height="96"></canvas>
+                        <div style="margin-top:20px; background:var(--accent); padding:12px; border-radius:5px; font-size:15px; line-height:1.6;">
+                            <div>Score: <span id="lbl-score" style="font-weight:bold;color:var(--text);">0</span></div>
+                            <div>Level: <span id="lbl-level" style="font-weight:bold;color:var(--text);">1</span></div>
+                            <div>Lines: <span id="lbl-lines" style="font-weight:bold;color:var(--text);">0</span></div>
+                        </div>
+                        <button onclick="exitActiveRoom()" style="background:#7f8c8d; margin-top:25px; padding:8px;">Quit Match</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. REAL-TIME MULTI-BOARD SPECTATOR WINDOW -->
+            <div id="panel-spectate" class="hidden">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Live Network Monitor (Watching Match)</h3>
+                    <button onclick="exitActiveRoom()" style="background:#7f8c8d; width:auto; padding:8px 15px;">Exit to Lobby</button>
+                </div>
+                <div class="spec-grid" id="spectator-matrix-grid"></div>
+            </div>
+
+        </div>
+
+        <!-- RIGHT SIDEBAR SYSTEM CHAT INTERFACE -->
+        <div class="side-panel">
+            <h3 style="margin-top:0; border-bottom:1px solid var(--accent); padding-bottom:5px; color:var(--text);">Global Chat Lobby</h3>
+            <div class="chat-logs" id="chat-box-logs"></div>
+            <div class="chat-input-row">
+                <input type="text" id="chat-text-input" placeholder="Type message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()" style="width:auto; margin:0;">Send</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        let socket = null;
+        let myUsername = "";
+        let myChips = 250;
+        let activeRoomId = null;
+        let isPracticeMode = false;
+
+        const ROW_COUNT = 20, COL_COUNT = 10, BLOCK_SIZE = 24;
+        
+        // Exact 2D matrix arrays representing the blocks safely
+        const SHAPES = {
+            'I': [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+            'J': [[1,0,0],[1,1,1],[0,0,0]],
+            'L': [[0,0,1],[1,1,1],[0,0,0]],
+            'O': [[1,1],[1,1]],
+            'S': [[0,1,1],[1,1,0],[0,0,0]],
+            'T': [[0,1,0],[1,1,1],[0,0,0]],
+            'Z': [[1,1,0],[0,1,1],[0,0,0]]
+        };
+        const COLORS = { 'I': '#00f0f0', 'J': '#0000f0', 'L': '#f0a000', 'O': '#f0f000', 'S': '#00f000', 'T': '#a000f0', 'Z': '#f00000' };
+
+        let canvas, ctx, prevCanvas, prevCtx;
+        let grid = [], score = 0, level = 1, lines = 0, timeLeft = 0;
+        let gameInterval = null, physicsInterval = null;
+        let currentPiece = null, nextPieceKey = "";
+
+        function connectToLobbyNetwork() {
+            myUsername = document.getElementById('user-name-input').value.trim();
+            if(!myUsername) return alert("Please type a valid username");
+
+            socket = io(window.location.origin);
+
+            socket.on('connect', () => {
+                console.log("Connected to server successfully!");
+            });
+
+            socket.on('init-lobby', (data) => {
+                document.getElementById('panel-login').classList.add('hidden');
+                document.getElementById('panel-lobby').classList.remove('hidden');
+                renderLobbyRooms(data.rooms);
+                
+                const logs = document.getElementById('chat-box-logs');
+                logs.innerHTML = data.chat.map(m => `<div>[${m.time}] <b>${m.user}:</b> ${m.text}</div>`).join('');
+                logs.scrollTop = logs.scrollHeight;
+            });
+
+            socket.on('receive-chat', (m) => {
+                const logs = document.getElementById('chat-box-logs');
+                logs.innerHTML += `<div>[${m.time}] <b>${m.user}:</b> ${m.text}</div>`;
+                logs.scrollTop = logs.scrollHeight;
+            });
+
+            socket.on('spectate-joined', ({ room }) => {
+                document.getElementById('panel-lobby').classList.add('hidden');
+                document.getElementById('panel-spectate').classList.remove('hidden');
+                setupSpectatorViews(room.players);
+            });
+
+            socket.on('spectate-frame', ({ boards }) => {
+                renderSpectatedFrames(boards);
+            });
+            
+            socket.on('connect_error', (err) => {
+                console.error("Connection failed: ", err);
+                alert("Network handshake failed. Make sure your terminal window is running server.js on port 3050!");
+            });
+        }
+        function renderLobbyRooms(rooms) {
+            const container = document.getElementById('room-list-container');
+            container.innerHTML = "";
+            Object.values(rooms).forEach(r => {
+                const card = document.createElement('div');
+                card.className = 'room-card';
+                card.onclick = () => joinRoomIdSlot(r.id);
+                card.innerHTML = `
+                    <h3 style="margin:0 0 5px 0;">Room ${r.id}</h3>
+                    <div style="font-size:13px;color:#bbb;margin-bottom:8px;">Status: ${r.status}</div>
+                    <div style="font-weight:bold;color:var(--text);">Players: ${r.players.length}/6</div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-text-input');
+            if(!input.value.trim()) return;
+            socket.emit('send-chat', { user: myUsername, text: input.value });
+            input.value = "";
+        }
+
+        function joinRoomIdSlot(id) {
+            activeRoomId = id;
+            isPracticeMode = false;
+            socket.emit('join-room', { roomId: id, username: myUsername, chips: myChips });
+            launchLocalGameWindow(`Room ${id}`);
+        }
+
+        function startPracticeMode() {
+            isPracticeMode = true;
+            launchLocalGameWindow("Practice Arena");
+        }
+
+        function launchLocalGameWindow(titleText) {
+            document.getElementById('panel-lobby').classList.add('hidden');
+            document.getElementById('panel-spectate').classList.add('hidden');
+            document.getElementById('panel-game').classList.remove('hidden');
+
+            document.getElementById('txt-room-id').innerText = titleText;
+            document.getElementById('txt-active-turn').innerText = myUsername;
+
+            canvas = document.getElementById('tetris-canvas'); ctx = canvas.getContext('2d');
+            prevCanvas = document.getElementById('preview-canvas'); prevCtx = prevCanvas.getContext('2d');
+
+            timeLeft = isPracticeMode ? 60 : 240; 
+            score = 0; level = 1; lines = 0;
+            
+            document.getElementById('lbl-score').innerText = score;
+            document.getElementById('lbl-level').innerText = level;
+            document.getElementById('lbl-lines').innerText = lines;
+
+            grid = Array.from({length: ROW_COUNT}, () => new Array(COL_COUNT).fill(0));
+
+            generateNextPieceKey();
+            spawnPiece();
+
+            clearInterval(gameInterval); clearInterval(physicsInterval);
+            gameInterval = setInterval(gameClockTick, 1000);
+            physicsInterval = setInterval(moveDown, 800);
+        }
+
+        function generateNextPieceKey() {
+            const keys = Object.keys(SHAPES);
+            nextPieceKey = keys[Math.floor(Math.random() * keys.length)];
+            drawPreview();
+        }
+
+        function spawnPiece() {
+            const key = nextPieceKey;
+            generateNextPieceKey();
+            currentPiece = { matrix: JSON.parse(JSON.stringify(SHAPES[key])), color: COLORS[key], y: 0, x: 3 };
+            if (checkCollide(0, 0, currentPiece.matrix)) {
+                clearInterval(gameInterval); clearInterval(physicsInterval);
+                alert("Round Complete! Final Score: " + score);
+                exitActiveRoom();
+            }
+        }
+
+        function checkCollide(xOffset, yOffset, matrix) {
+            for(let r=0; r<matrix.length; r++) {
+                for(let c=0; c<matrix[r].length; c++) {
+                    if(matrix[r][c]) {
+                        let nx = currentPiece.x + c + xOffset;
+                        let ny = currentPiece.y + r + yOffset;
+                        if(nx < 0 || nx >= COL_COUNT || ny >= ROW_COUNT) return true;
+                        if(ny >= 0 && grid[ny][nx]) return true;
+                    }
+                }
+            }
+            return false;
+        }
+        function moveDown() {
+            if(!checkCollide(0, 1, currentPiece.matrix)) {
+                currentPiece.y++;
+            } else {
+                lockAndMerge();
+                clearRows();
+                spawnPiece();
+            }
+            drawArena();
+            syncStateToNetwork();
+        }
+
+        function lockAndMerge() {
+            for(let r=0; r<currentPiece.matrix.length; r++) {
+                for(let c=0; c<currentPiece.matrix[r].length; c++) {
+                    if(currentPiece.matrix[r][c]) {
+                        if(currentPiece.y + r >= 0) grid[currentPiece.y + r][currentPiece.x + c] = currentPiece.color;
+                    }
+                }
+            }
+        }
+
+        function clearRows() {
+            for(let r = ROW_COUNT-1; r>=0; r--) {
+                if(grid[r].every(v => v !== 0)) {
+                    grid.splice(r, 1);
+                    grid.unshift(new Array(COL_COUNT).fill(0));
+                    score += 100 * level;
+                    lines++;
+                    r++;
+                }
+            }
+            document.getElementById('lbl-score').innerText = score;
+            document.getElementById('lbl-level').innerText = level;
+            document.getElementById('lbl-lines').innerText = lines;
+        }
+
+        function gameClockTick() {
+            if(timeLeft <= 0) {
+                clearInterval(gameInterval); clearInterval(physicsInterval);
+                alert("Time Limit Reached! Match Over.");
+                exitActiveRoom();
+                return;
+            }
+            timeLeft--;
+            let mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
+            document.getElementById('txt-match-timer').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+        }
+
+        function syncStateToNetwork() {
+            if(!isPracticeMode && socket) {
+                socket.emit('sync-board-matrix', { grid, score, level, lines, curPlayer: myUsername });
+            }
+        }
+
+        function drawArena() {
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            for(let r=0; r<ROW_COUNT; r++) {
+                for(let c=0; c<COL_COUNT; c++) {
+                    if(grid[r][c]) { ctx.fillStyle = grid[r][c]; ctx.fillRect(c*BLOCK_SIZE, r*BLOCK_SIZE, BLOCK_SIZE-1, BLOCK_SIZE-1); }
+                }
+            }
+            if(currentPiece) {
+                ctx.fillStyle = currentPiece.color;
+                for(let r=0; r<currentPiece.matrix.length; r++) {
+                    for(let c=0; c<currentPiece.matrix[r].length; c++) {
+                        if(currentPiece.matrix[r][c]) ctx.fillRect((currentPiece.x+c)*BLOCK_SIZE, (currentPiece.y+r)*BLOCK_SIZE, BLOCK_SIZE-1, BLOCK_SIZE-1);
+                    }
+                }
+            }
+        }
+
+        function drawPreview() {
+            prevCtx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
+            prevCtx.fillStyle = COLORS[nextPieceKey];
+            const matrix = SHAPES[nextPieceKey];
+            for(let r=0; r<matrix.length; r++) {
+                for(let c=0; c<matrix[r].length; c++) {
+                    if(matrix[r][c]) prevCtx.fillRect(c*18 + 15, r*18 + 15, 17, 17);
+                }
+            }
+        }
+
+        document.addEventListener('keydown', e => {
+            if(!currentPiece) return;
+            if(e.key === 'ArrowLeft' || e.key === 'a') { if(!checkCollide(-1, 0, currentPiece.matrix)) currentPiece.x--; }
+            if(e.key === 'ArrowRight' || e.key === 'd') { if(!checkCollide(1, 0, currentPiece.matrix)) currentPiece.x++; }
+            if(e.key === 'ArrowDown' || e.key === 's') moveDown();
+            if(e.key === 'ArrowUp' || e.key === 'w') rotateMatrix();
+            drawArena();
+        });
+
+        function rotateMatrix() {
+            const matrix = currentPiece.matrix, n = matrix.length;
+            let temp = Array.from({length:n}, () => new Array(n).fill(0));
+            for(let r=0; r<n; r++) { for(let c=0; c<n; c++) temp[c][n-1-r] = matrix[r][c]; }
+            if(!checkCollide(0,0,temp)) currentPiece.matrix = temp;
+        }
+
+        function setupSpectatorViews(playersList) {
+            const gridView = document.getElementById('spectator-matrix-grid');
+            gridView.innerHTML = playersList.map(p => `
+                <div class="spec-view-card" id="card-spec-${p.name}">
+                    <h5 style="margin:0;">${p.name}</h5>
+                    <div style="font-size:11px;color:#aaa;" id="lbl-spec-hud-${p.name}">Score: 0</div>
+                    <canvas id="canvas-spec-${p.name}" width="100" height="200" style="width:100px; height:200px; margin:5px auto;"></canvas>
+                </div>
+            `).join('');
+        }
+
+        function renderSpectatedFrames(boards) {
+            Object.keys(boards).forEach(socketId => {
+                const b = boards[socketId];
+                const label = document.getElementById(`lbl-spec-hud-${b.curPlayer}`);
+                if(label) label.innerText = `Score: ${b.score}`;
+                
+                const c = document.getElementById(`canvas-spec-${b.curPlayer}`);
+                if(c) {
+                    const sCtx = c.getContext('2d');
+                    sCtx.clearRect(0,0,100,200);
+                    for(let r=0; r<ROW_COUNT; r++) {
+                        for(let cGrid=0; cGrid<COL_COUNT; cGrid++) {
+                            if(b.grid[r] && b.grid[r][cGrid]) {
+                                sCtx.fillStyle = b.grid[r][cGrid];
+                                sCtx.fillRect(cGrid*10, r*10, 9, 9);
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function exitActiveRoom() {
+            clearInterval(gameInterval); clearInterval(physicsInterval);
+            location.reload(); 
+        }
+    </script>
+</body>
+</html>

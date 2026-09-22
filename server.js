@@ -53,18 +53,19 @@ io.on('connection', (socket) => {
     // PROFILE LOGIN: Check Render SQL database or insert a fresh ledger profile
     socket.on('player-login', async ({ username }) => {
         try {
-            let res = await pool.query('SELECT * FROM players WHERE username = \$1', [username]);
+            let result = await pool.query('SELECT * FROM players WHERE username = \$1', [username]);
             let playerChips = 250;
 
-            if (res && res.rows && res.rows.length > 0) {
-                playerChips = res.rows[0].chips; // Safely read row indexes
+            // FIX: Safely parse array index bounds to prevent unhandled node runtime exceptions
+            if (result && result.rows && result.rows.length > 0) {
+                playerChips = result.rows[0].chips; 
                 console.log(`💾 Loaded SQL Profile: ${username} (${playerChips} Chips)`);
             } else {
                 try {
                     await pool.query('INSERT INTO players (username, chips) VALUES (\$1, \$2)', [username, 250]);
                     console.log(`🆕 Registered New SQL Profile: ${username} (250 Chips)`);
                 } catch(e) {
-                    // Local fallback catch
+                    // Fail-safe wrapper for concurrent profile race conditions
                 }
             }
 
@@ -105,7 +106,7 @@ io.on('connection', (socket) => {
             await pool.query('UPDATE players SET chips = \$1 WHERE username = \$2', [finalChips, username]);
             console.log(`💰 Render SQL Wallet Saved: ${username} -> ${finalChips} Chips`);
         } catch (err) {
-            // Silently catch local fallbacks
+            // Silently absorb any disconnected database queries
         }
     });
 

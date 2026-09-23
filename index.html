@@ -2,470 +2,244 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tetris Arcade Network Showdown</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tetris Network Arcade Suite</title>
+    <!-- Connects directly to your server.js socket infrastructure -->
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        :root { 
-            --bg: #1a1a2e; 
-            --panel: #16213e; 
-            --accent: #0f3460; 
-            --text: #e94560; 
-            --white: #fff; 
+        :root {
+            --bg-color: #121225;
+            --panel-color: #1c1c3a;
+            --accent-color: #ff4757;
+            --secondary-accent: #2f3542;
+            --text-color: #ffffff;
+            --sub-text: #aaaaaa;
         }
-        html, body {
-            margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
-            background: var(--bg); color: var(--white); font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; touch-action: none;
-            <!-- 1. Dropdown Selection Box with Modes & Rules -->
-<label for="modeSelect">Game Variant Mode:</label>
-<select id="modeSelect" onchange="handleModeChange(this.value)">
-    <option value="practice">Practice Mode</option>
-    <option value="single">Single Player</option>
-    <option value="competition">Competition (Versus)</option>
-    <option value="RULES_TAB">--- 📖 View Rules ---</option>
-</select>
 
-<!-- 2. Room Counter & Leave Button -->
-<div>
-    <p>Users in Room: <span id="roomPopulationCounter">1</span></p>
-    <button id="leaveRoomBtn" onclick="leaveCurrentRoom()">Leave Room</button>
-</div>
-
-<!-- 3. Dual Canvas Layout (For side-by-side Competition Mode) -->
-<div class="boards-area" style="display: flex; gap: 20px;">
-    <!-- Your Existing Local Canvas -->
-    <div class="board-wrapper" style="position: relative;">
-        <h4>Your Grid</h4>
-        <canvas id="localCanvas" width="240" height="400"></canvas>
-        
-        <!-- Non-kick Game Over Choice Overlay -->
-        <div id="lossOverlay" class="hidden" style="position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
-            <h3>GAME OVER</h3>
-            <button onclick="restartLocalGame()">Play Again</button>
-            <button onclick="leaveCurrentRoom()">Get Up From Seat</button>
-        </div>
-    </div>
-
-    <!-- Second Canvas: Only shown during Competition Mode -->
-    <div id="opponentWrapper" class="hidden">
-        <h4>Opponent Live Feed</h4>
-        <canvas id="opponentCanvas" width="240" height="400"></canvas>
-    </div>
-</div>
-
-<!-- 4. Rules Popup Modal Window -->
-<div id="rulesModal" class="hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; padding: 20px; border: 2px solid red; z-index: 100;">
-    <h2>How to Play Tetris</h2>
-    <p>Practice: Infinite time. Single Player: Classic survival. Competition: Side-by-side battle!</p>
-    <button onclick="closeRulesModal()">Close Rules</button>
-</div>
-
-<!-- 5. Lobby Chat Space -->
-<div class="chat-section">
-    <h4>Lobby Messaging</h4>
-    <div id="chatLog" style="height:120px; overflow-y:auto; background:#000;"></div>
-    <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
-    <button onclick="sendChatMessage()">Send</button>
-</div>
-
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
-        h1 { color: var(--text); text-shadow: 0 0 10px rgba(233, 69, 96, 0.4); margin: 5px 0 0 0; font-size: 18px; text-align: center; flex-shrink: 0; }
+
         .hidden { display: none !important; }
-        .container { display: flex; flex-direction: row; gap: 10px; width: 100%; height: calc(100% - 30px); box-sizing: border-box; padding: 10px; }
-        .main-panel { flex: 2; background: var(--panel); border: 2px solid var(--accent); padding: 10px; border-radius: 10px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow: hidden; }
-        .side-panel { flex: 1; background: var(--panel); border: 2px solid var(--accent); padding: 10px; border-radius: 10px; display: flex; flex-direction: column; height: 100%; box-sizing: border-box; overflow: hidden; }
-        .room-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 8px; margin-top: 10px; overflow-y: auto; flex-grow: 1; }
-        .room-card { background: var(--accent); padding: 10px; border-radius: 6px; text-align: center; cursor: pointer; }
-        .arena-layout { display: flex; gap: 10px; justify-content: center; align-items: center; flex-grow: 1; min-height: 0; }
-        .canvas-wrapper { height: 100%; max-height: 50vh; aspect-ratio: 10 / 20; }
-        canvas#tetris-canvas { width: 100%; height: 100%; background: #000; border: 2px solid var(--accent); border-radius: 5px; display: block; }
-        .mobile-controls-dpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; max-width: 220px; margin: 8px auto 0 auto; flex-shrink: 0; }
-        .btn-touch { background: var(--accent); color: #fff; border: 1px solid #1f4068; border-radius: 8px; padding: 12px 0; font-size: 20px; font-weight: bold; cursor: pointer; text-align: center; box-shadow: 0 3px 0 #0b1d3a; }
-        .btn-touch:active { background: var(--text); transform: translateY(2px); box-shadow: 0 1px 0 #0b1d3a; }
-        .chat-logs { flex-grow: 1; overflow-y: auto; background: #000; border-radius: 5px; padding: 8px; margin-bottom: 8px; font-size: 12px; border: 1px solid var(--accent); min-height: 0; }
-        .chat-input-row { display: flex; gap: 5px; flex-shrink: 0; }
-        .chat-input-row input { flex-grow: 1; padding: 8px; border-radius: 4px; border: none; background: #0b132b; color: #fff; font-size: 13px; }
-        .chat-input-row button { width: auto; padding: 8px 12px; margin: 0; font-size: 13px; }
-        .spec-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; margin-top: 10px; overflow-y: auto; }
-        .spec-view-card { background: #000; border: 1px solid var(--accent); padding: 4px; font-size: 10px; text-align: center; }
-        button { background: var(--text); color: white; border: none; padding: 10px; font-weight: bold; border-radius: 5px; cursor: pointer; font-size: 14px; flex-shrink: 0; }
-        input, select { width: 100%; padding: 10px; margin-bottom: 10px; background: var(--accent); color: #fff; border: 1px solid #222; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
-        @media (max-width: 580px) {
-            .container { flex-direction: column; gap: 8px; }
-            .main-panel { flex: 3; }
-            .side-panel { flex: 1.2; min-height: 0; }
-            h1 { font-size: 15px; }
-            .arena-layout { gap: 8px; }
-            .canvas-wrapper { max-height: 38vh; }
+
+        .auth-container, .lobby-container, .game-container {
+            background: var(--panel-color);
+            padding: 25px;
+            border-radius: 8px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 800px;
+            box-sizing: border-box;
         }
+
+        .input-style {
+            background: var(--secondary-accent);
+            color: #fff;
+            border: 1px solid var(--accent-color);
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+
+        .btn-style {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .btn-style:hover { background: #ff6b81; }
+        .btn-style.secondary { background: #57606f; }
+        .btn-style.secondary:hover { background: #747d8c; }
+
+        .mode-select-style {
+            background: var(--secondary-accent);
+            color: #fff;
+            border: 1px solid var(--accent-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+        }
+
+        /* Boards Layout Aligned Side-by-Side */
+        .boards-layout-container {
+            display: flex;
+            gap: 25px;
+            justify-content: center;
+            align-items: center;
+            margin: 20px auto;
+            width: 100%;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            text-align: center;
+        }
+
+        canvas {
+            background-color: #000;
+            border: 3px solid var(--secondary-accent);
+            border-radius: 6px;
+        }
+
+        /* Loss overlay (Never kicks players out of the server) */
+        .game-choice-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 15, 25, 0.94);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border-radius: 6px;
+            padding: 15px;
+            box-sizing: border-box;
+            z-index: 10;
+        }
+
+        /* Rules Modal Pop-up Shroud */
+        .modal-overlay-shroud {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            z-index: 99;
+        }
+
+        .rules-popup-card {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1e1e2f;
+            border: 2px solid var(--accent-color);
+            border-radius: 8px;
+            padding: 25px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.6);
+            z-index: 100;
+        }
+
+        /* Chat System Panel UI */
+        .chat-section {
+            border-top: 2px solid var(--secondary-accent);
+            margin-top: 20px;
+            padding-top: 15px;
+        }
+        .chat-log {
+            height: 130px;
+            overflow-y: auto;
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            text-align: left;
+            margin-bottom: 10px;
+        }
+        .chat-msg { margin-bottom: 4px; }
+        .system-tag { color: #4e9f3d; font-weight: bold; }
+        .user-tag { color: var(--accent-color); font-weight: bold; }
     </style>
 </head>
 <body>
-    <h1>Tetris Arcade Network Showdown</h1>
-    <div class="container">
-        <div class="main-panel">
-            <div id="panel-login" style="margin: auto; width: 100%; max-width: 320px;">
-                <h2 style="margin-top:0; font-size:18px; text-align:center;">Profile Registration</h2>
-                <label style="font-size:13px;">Choose Username:</label>
-                <input type="text" id="user-name-input" value="Player_1">
-                <button id="btn-connect" onclick="connectToLobbyNetwork()">Connect to Game Servers</button>
+
+    <h2>Tetris Network Arcade Suite</h2>
+
+    <!-- 3. IDENTITY SIGN IN (Stays logged in across refreshes) -->
+    <div id="authScreen" class="auth-container">
+        <h3>Choose Player Identity</h3>
+        <div style="display: flex; gap: 10px;">
+            <input type="text" id="usernameInput" class="input-style" placeholder="Enter Player Name..." style="flex: 1;">
+            <button class="btn-style" onclick="handleManualFormLogin()">Enter Arena</button>
+        </div>
+    </div>
+
+    <!-- 6. ROOM SELECTION LOBBY -->
+    <div id="lobbyScreen" class="lobby-container hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3>Welcome, <span id="lobbyGreetingName" class="user-tag">Player</span>!</h3>
+            <button class="btn-style secondary" onclick="handleSignOutAndForget()">Forget Account Profile</button>
+        </div>
+        <p>Select a match channel index down below to load into a seat:</p>
+        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px;">
+            <button class="btn-style" onclick="enterRoomArena(1)">Join Room Arena #1</button>
+            <button class="btn-style" onclick="enterRoomArena(2)">Join Room Arena #2</button>
+        </div>
+    </div>
+
+    <!-- MAIN STRATEGIC GAMEPLAY WORKSPACE DISPLAY -->
+    <div id="gameScreen" class="game-container hidden">
+        
+        <!-- 1, 5 & 6. Selection Box with Rules tab, Counter, and Leave Terminal -->
+        <div class="room-controls-row" style="display: flex; gap: 15px; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+            <div>
+                <label for="modeSelect" style="font-weight: bold; margin-right: 5px;">Game Variant Mode:</label>
+                <select id="modeSelect" class="mode-select-style" onchange="handleModeChange(this.value)">
+                    <option value="practice">Practice Mode</option>
+                    <option value="single">Single Player</option>
+                    <option value="competition">Competition (Versus)</option>
+                    <option value="RULES_TAB">--- 📖 View Rules ---</option>
+                </select>
             </div>
-            <div id="panel-lobby" class="hidden" style="display:flex; flex-direction:column; height:100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-                    <h3 style="margin:0; font-size:14px;">Active Game Rooms</h3>
-                    <button onclick="startPracticeMode()" style="background:#27ae60; padding:5px 10px; font-size:12px;">Practice ⏱</button>
-                </div>
-                <div class="room-grid" id="room-list-container"></div>
-            </div>
-            <div id="panel-game" class="hidden" style="display:flex; flex-direction:column; height:100%;">
-                <div style="display:flex; justify-content:space-between; font-size:13px; border-bottom:1px solid var(--accent); padding-bottom:3px; flex-shrink:0;">
-                    <div>Match: <span id="txt-room-id" style="color:var(--text); font-weight:bold;">-</span></div>
-                    <div>Time: <span id="txt-match-timer" style="color:var(--text); font-weight:bold;">00:00</span></div>
-                </div>
-                <div class="arena-layout">
-                    <div class="canvas-wrapper">
-                        <canvas id="tetris-canvas" width="240" height="480"></canvas>
-                    </div>
-                    <div style="text-align:center; min-width:85px; display:flex; flex-direction:column; gap:5px; height:100%; justify-content:center;">
-                        <h6 style="margin: 0; font-size:11px; text-transform:uppercase; color:#aaa;">Next</h6>
-                        <canvas id="preview-canvas" width="60" height="60" style="margin:0 auto; background:#000; border:1px solid var(--accent); border-radius:4px;"></canvas>
-                        <div style="background:var(--accent); padding:5px; border-radius:4px; font-size:11px; text-align:left; line-height:1.3;">
-                            <div>Score:<br><span id="lbl-score" style="font-weight:bold;color:var(--text);">0</span></div>
-                        </div>
-                        <button onclick="exitActiveRoom()" style="background:#7f8c8d; padding:4px; font-size:11px; margin-top:5px;">Quit</button>
-                    </div>
-                </div>
-                <div class="mobile-controls-dpad">
-                    <div class="btn-touch" onclick="triggerTouchAction('left')">◀</div>
-                    <div class="btn-touch" onclick="triggerTouchAction('rotate')">↻</div>
-                    <div class="btn-touch" onclick="triggerTouchAction('right')">▶</div>
-                    <div></div>
-                    <div class="btn-touch" onclick="triggerTouchAction('drop')">▼</div>
-                    <div></div>
-                </div>
-            </div>
-            <div id="panel-spectate" class="hidden" style="display:flex; flex-direction:column; height:100%;">
-                <div style="display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
-                    <h4 style="margin:0; font-size:13px;">Live Monitor</h4>
-                    <button onclick="exitActiveRoom()" style="background:#7f8c8d; padding:4px 8px; font-size:11px;">Exit</button>
-                </div>
-                <div class="spec-grid" id="spectator-matrix-grid"></div>
+            
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <p style="margin: 0;">Users in Room: <span id="roomPopulationCounter" style="font-weight: bold; color: var(--accent-color);">0</span></p>
+                <button id="leaveRoomBtn" class="btn-style" onclick="leaveCurrentRoom()">Leave Room</button>
             </div>
         </div>
-        <div class="side-panel">
-            <h4 style="margin:0 0 5px 0; border-bottom:1px solid var(--accent); padding-bottom:3px; color:var(--text); font-size:13px; flex-shrink:0;">Lobby Chat</h4>
-            <div class="chat-logs" id="chat-box-logs"></div>
-            <div class="chat-input-row">
-                <input type="text" id="chat-text-input" placeholder="Message..." onkeydown="if(event.key==='Enter') sendChatMessage()">
-                <button onclick="sendChatMessage()">Send</button>
+
+        <!-- 3. Safe Match Round Timer -->
+        <div style="margin: 15px 0; font-size: 1.3rem; font-weight: bold; text-align: center; background: #000; padding: 5px; border-radius: 4px;">
+            Match Round Timer Countdown: <span id="gameTimer" style="color: var(--accent-color);">02:00</span>
+        </div>
+
+        <!-- 2. SIDE-BY-SIDE ACTIVE DUAL CANVAS FEEDS -->
+        <div class="boards-layout-container">
+            <div class="canvas-wrapper">
+                <h4 id="localPlayerHeader">Your Grid</h4>
+                <canvas id="localCanvas" width="240" height="400"></canvas>
+                
+                <!-- 3. Loss Action Choice Screen (Play again or get up) -->
+                <div id="lossOverlay" class="hidden game-choice-overlay">
+                    <h3 style="color: var(--accent-color); margin: 0 0 5px 0;">ROUND COMPLETED</h3>
+                    <p style="margin: 0 0 15px 0; font-size: 0.9rem; text-align: center; color: var(--sub-text);">You are still inside the room server. What would you like to execute next?</p>
+                    <button class="btn-style" onclick="restartLocalGame()" style="width: 80%;">Play Again</button>
+                    <button class="btn-style secondary" onclick="leaveCurrentRoom()" style="width: 80%; margin-top: 8px;">Get Up From Seat</button>
+                </div>
+            </div>
+
+            <!-- Second Canvas Display Wrapper (Shown ONLY during competition mode) -->
+            <div id="opponentWrapper" class="canvas-wrapper hidden">
+                <h4>Opponent Live Feed</h4>
+                <canvas id="opponentCanvas" width="240" height="400"></canvas>
+            </div>
+        </div>
+
+        <!-- 4. Lobby Messaging Component Arena -->
+        <div class="chat-section">
+            <h4>Room Communication Terminal</h4>
+            <div id="chatLog" class="chat-log"></div>
+            <div style="display: flex; gap: 10px;">
+                <input type="text" id="chatInput" class="input-style" placeholder="Type a room broadcast..." style="flex: 1;" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                <button class="btn-style" onclick="sendChatMessage()">Send</button>
             </div>
         </div>
     </div>
-    <script>
-        // State variables to inject
-let selectedPlayMode = "practice";
-let lastSelectedMode = "practice";
-let currentUser = "Player_" + Math.floor(Math.random() * 1000); // Keeps user signed in
 
-// Handles Option 1 & 7: Selection box mode switches and Rules tab popup trigger
-function handleModeChange(value) {
-    if (value === "RULES_TAB") {
-        document.getElementById('rulesModal').classList.remove('hidden');
-        document.getElementById('modeSelect').value = lastSelectedMode; // Revert select display
-        return;
-    }
-    selectedPlayMode = value;
-    lastSelectedMode = value;
-    
-    // Handles Option 2: Show opponent side-by-side ONLY during active competition
-    const oppWrapper = document.getElementById('opponentWrapper');
-    if (selectedPlayMode === "competition") {
-        oppWrapper.classList.remove('hidden');
-    } else {
-        oppWrapper.classList.add('hidden');
-    }
-}
-
-function closeRulesModal() {
-    document.getElementById('rulesModal').classList.add('hidden');
-}
-
-// Handles Option 3: Loss state choice overlay (does not kick user from room)
-function triggerGameLoss() {
-    // Call this inside your existing code wherever your block collision logic triggers a loss
-    document.getElementById('lossOverlay').classList.remove('hidden');
-}
-
-function restartLocalGame() {
-    document.getElementById('lossOverlay').classList.add('hidden');
-    // Call your existing game reset/start function here (e.g., initGame() or startGame())
-}
-
-// Handles Option 6: Leave Room Button Logic
-function leaveCurrentRoom() {
-    document.getElementById('lossOverlay').classList.add('hidden');
-    alert("Leaving room... returning to room picker.");
-    // Insert code here to emit a room leave event to your server if tracking sockets
-}
-
-// Handles Option 4: Chat input displaying user names
-function sendChatMessage() {
-    const inp = document.getElementById('chatInput');
-    const msg = inp.value.trim();
-    if (!msg) return;
-    
-    const log = document.getElementById('chatLog');
-    const row = document.createElement('div');
-    // Injects persistent signed-in player name directly next to message block
-    row.innerHTML = `<strong>[${currentUser}]:</strong> <span>${msg}</span>`;
-    log.appendChild(row);
-    log.scrollTop = log.scrollHeight;
-    inp.value = "";
-}
-
-        let socket = null;
-        let myUsername = "";
-        let myChips = 250;
-        let activeRoomId = null;
-        let isPracticeMode = false;
-
-        const ROW_COUNT = 20, COL_COUNT = 10, BLOCK_SIZE = 24;
-        const SHAPES = {
-            'I': [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
-            'J': [[1,0,0],[1,1,1],[0,0,0]],
-            'L': [[0,0,1],[1,1,1],[0,0,0]],
-            'O': [[1,1],[1,1]],
-            'S': [[0,1,1],[1,1,0],[0,0,0]],
-            'T': [[0,1,0],[1,1,1],[0,0,0]],
-            'Z': [[1,1,0],[0,1,1],[0,0,0]]
-        };
-        const COLORS = { 'I': '#00f0f0', 'J': '#0000f0', 'L': '#f0a000', 'O': '#f0f000', 'S': '#00f000', 'T': '#a000f0', 'Z': '#f00000' };
-
-        let canvas, ctx, prevCanvas, prevCtx;
-        let grid = [], score = 0, level = 1, lines = 0, timeLeft = 0;
-        let gameInterval = null, physicsInterval = null;
-        let currentPiece = null, nextPieceKey = "";
-
-        function connectToLobbyNetwork() {
-            myUsername = document.getElementById('user-name-input').value.trim();
-            if(!myUsername) return alert("Please type a valid username");
-
-            socket = io(window.location.origin);
-
-            socket.on('connect', () => {
-                // FIXED: This line now sends the profile registration alert to the backend!
-                socket.emit('player-login', { username: myUsername });
-            });
-
-            socket.on('init-lobby', (data) => {
-                myUsername = data.username; myChips = data.chips;
-                document.getElementById('panel-login').classList.add('hidden');
-                document.getElementById('panel-lobby').classList.remove('hidden');
-                renderLobbyRooms(data.rooms);
-                
-                const logs = document.getElementById('chat-box-logs');
-                logs.innerHTML = data.chat.map(m => `<div>[${m.time}] <b>${m.user}:</b> ${m.text}</div>`).join('');
-                logs.scrollTop = logs.scrollHeight;
-            });
-
-            socket.on('receive-chat', (m) => {
-                const logs = document.getElementById('chat-box-logs');
-                logs.innerHTML += `<div>[${m.time}] <b>${m.user}:</b> ${m.text}</div>`;
-                logs.scrollTop = logs.scrollHeight;
-            });
-
-            socket.on('spectate-joined', ({ room }) => {
-                document.getElementById('panel-lobby').classList.add('hidden');
-                document.getElementById('panel-spectate').classList.remove('hidden');
-                setupSpectatorViews(room.players);
-            });
-
-            socket.on('spectate-frame', ({ boards }) => { renderSpectatedFrames(boards); });
-        }
-
-        function renderLobbyRooms(rooms) {
-            const container = document.getElementById('room-list-container');
-            container.innerHTML = "";
-            Object.values(rooms).forEach(r => {
-                const card = document.createElement('div');
-                card.className = 'room-card';
-                card.onclick = () => joinRoomIdSlot(r.id);
-                card.innerHTML = `<h5 style="margin:0; font-size:13px;">Room ${r.id}</h5><div style="font-size:11px;color:#bbb;">${r.players.length}/6</div>`;
-                container.appendChild(card);
-            });
-        }
-
-        function sendChatMessage() {
-            const input = document.getElementById('chat-text-input');
-            if(!input.value.trim()) return;
-            socket.emit('send-chat', { user: myUsername, text: input.value });
-            input.value = "";
-        }
-
-        function joinRoomIdSlot(id) {
-            activeRoomId = id; isPracticeMode = false;
-            socket.emit('join-room', { roomId: id, username: myUsername, chips: myChips });
-            launchLocalGameWindow(`Room ${id}`);
-        }
-
-        function startPracticeMode() { isPracticeMode = true; launchLocalGameWindow("Practice"); }
-        function launchLocalGameWindow(titleText) {
-            document.getElementById('panel-lobby').classList.add('hidden');
-            document.getElementById('panel-game').classList.remove('hidden');
-            document.getElementById('txt-room-id').innerText = titleText;
-
-            canvas = document.getElementById('tetris-canvas'); ctx = canvas.getContext('2d');
-            prevCanvas = document.getElementById('preview-canvas'); prevCtx = prevCanvas.getContext('2d');
-
-            timeLeft = isPracticeMode ? 60 : 240; score = 0; level = 1; lines = 0;
-            grid = Array.from({length: ROW_COUNT}, () => new Array(COL_COUNT).fill(0));
-
-            generateNextPieceKey(); spawnPiece();
-            clearInterval(gameInterval); clearInterval(physicsInterval);
-            gameInterval = setInterval(gameClockTick, 1000);
-            physicsInterval = setInterval(moveDown, 800);
-        }
-
-        function generateNextPieceKey() {
-            const keys = Object.keys(SHAPES);
-            nextPieceKey = keys[Math.floor(Math.random() * keys.length)];
-            drawPreview();
-        }
-
-        function spawnPiece() {
-            const key = nextPieceKey; generateNextPieceKey();
-            currentPiece = { matrix: JSON.parse(JSON.stringify(SHAPES[key])), color: COLORS[key], y: 0, x: 3 };
-            if (checkCollide(0, 0, currentPiece.matrix)) {
-                clearInterval(gameInterval); clearInterval(physicsInterval);
-                alert("Round Complete! Score: " + score);
-                exitActiveRoom();
-            }
-        }
-
-        function checkCollide(xOffset, yOffset, matrix) {
-            for(let r=0; r<matrix.length; r++) {
-                for(let c=0; c<matrix[r].length; c++) {
-                    if(matrix[r][c]) {
-                        let nx = currentPiece.x + c + xOffset;
-                        let ny = currentPiece.y + r + yOffset;
-                        if(nx < 0 || nx >= COL_COUNT || ny >= ROW_COUNT) return true;
-                        if(ny >= 0 && grid[ny][nx]) return true;
-                    }
-                }
-            }
-            return false;
-        }
-
-        function moveDown() {
-            if(!checkCollide(0, 1, currentPiece.matrix)) { currentPiece.y++; } 
-            else { lockAndMerge(); clearRows(); spawnPiece(); }
-            drawArena(); syncStateToNetwork();
-        }
-
-        function lockAndMerge() {
-            for(let r=0; r<currentPiece.matrix.length; r++) {
-                for(let c=0; c<currentPiece.matrix[r].length; c++) {
-                    if(currentPiece.matrix[r][c] && currentPiece.y + r >= 0) {
-                        grid[currentPiece.y + r][currentPiece.x + c] = currentPiece.color;
-                    }
-                }
-            }
-        }
-
-        function clearRows() {
-            for(let r = ROW_COUNT-1; r>=0; r--) {
-                if(grid[r].every(v => v !== 0)) {
-                    grid.splice(r, 1); grid.unshift(new Array(COL_COUNT).fill(0));
-                    score += 100; lines++; r++;
-                }
-            }
-            document.getElementById('lbl-score').innerText = score;
-        }
-
-        function gameClockTick() {
-            if(timeLeft <= 0) { exitActiveRoom(); return; }
-            timeLeft--;
-            let mins = Math.floor(timeLeft / 60), secs = timeLeft % 60;
-            document.getElementById('txt-match-timer').innerText = `${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
-        }
-
-        function syncStateToNetwork() {
-            if(!isPracticeMode && socket) socket.emit('sync-board-matrix', { grid, score, level, lines, curPlayer: myUsername });
-        }
-
-        function drawArena() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            for(let r=0; r<ROW_COUNT; r++) {
-                for(let c=0; c<COL_COUNT; c++) {
-                    if(grid[r][c]) { ctx.fillStyle = grid[r][c]; ctx.fillRect(c*BLOCK_SIZE, r*BLOCK_SIZE, BLOCK_SIZE-1, BLOCK_SIZE-1); }
-                }
-            }
-            if(currentPiece) {
-                ctx.fillStyle = currentPiece.color;
-                for(let r=0; r<currentPiece.matrix.length; r++) {
-                    for(let c=0; c<currentPiece.matrix[r].length; c++) {
-                        if(currentPiece.matrix[r][c]) ctx.fillRect((currentPiece.x+c)*BLOCK_SIZE, (currentPiece.y+r)*BLOCK_SIZE, BLOCK_SIZE-1, BLOCK_SIZE-1);
-                    }
-                }
-            }
-        }
-
-        function drawPreview() {
-            prevCtx.clearRect(0,0,prevCanvas.width,prevCanvas.height);
-            prevCtx.fillStyle = COLORS[nextPieceKey];
-            const matrix = SHAPES[nextPieceKey];
-            for(let r=0; r<matrix.length; r++) {
-                for(let c=0; c<matrix[r].length; c++) {
-                    if(matrix[r][c]) prevCtx.fillRect(c*12 + 6, r*12 + 6, 11, 11);
-                }
-            }
-        }
-
-        function triggerTouchAction(actionType) {
-            if(!currentPiece) return;
-            if(actionType === 'left' && !checkCollide(-1, 0, currentPiece.matrix)) currentPiece.x--;
-            if(actionType === 'right' && !checkCollide(1, 0, currentPiece.matrix)) currentPiece.x++;
-            if(actionType === 'drop') moveDown();
-            if(actionType === 'rotate') rotateMatrix();
-            drawArena();
-        }
-
-        document.addEventListener('keydown', e => {
-            if(e.key === 'ArrowLeft' || e.key === 'a') triggerTouchAction('left');
-            if(e.key === 'ArrowRight' || e.key === 'd') triggerTouchAction('right');
-            if(e.key === 'ArrowDown' || e.key === 's') triggerTouchAction('drop');
-            if(e.key === 'ArrowUp' || e.key === 'w') triggerTouchAction('rotate');
-        });
-
-        function rotateMatrix() {
-            const matrix = currentPiece.matrix, n = matrix.length;
-            let temp = Array.from({length:n}, () => new Array(n).fill(0));
-            for(let r=0; r<n; r++) { for(let c=0; c<n; c++) temp[c][n-1-r] = matrix[r][c]; }
-            if(!checkCollide(0,0,temp)) currentPiece.matrix = temp;
-        }
-
-        function setupSpectatorViews(playersList) {
-            document.getElementById('spectator-matrix-grid').innerHTML = playersList.map(p => `
-                <div class="spec-view-card"><h5>${p.name}</h5><canvas id="canvas-spec-${p.name}" width="80" height="160"></canvas></div>
-            `).join('');
-        }
-
-        function renderSpectatedFrames(boards) {
-            Object.keys(boards).forEach(sid => {
-                const b = boards[sid]; const c = document.getElementById(`canvas-spec-${b.curPlayer}`);
-                if(c) {
-                    const sCtx = c.getContext('2d'); sCtx.clearRect(0,0,80,160);
-                    for(let r=0; r<ROW_COUNT; r++) {
-                        for(let cGrid=0; cGrid<COL_COUNT; cGrid++) {
-                            if(b.grid[r] && b.grid[r][cGrid]) { sCtx.fillStyle = b.grid[r][cGrid]; sCtx.fillRect(cGrid*8, r*8, 7, 7); }
-                        }
-                    }
-                }
-            });
-        }
-
-        function exitActiveRoom() { clearInterval(gameInterval); clearInterval(physicsInterval); location.reload(); }
-    </script>
-</body>
-</html>
+    <!-- 7. Pop-up Rules overlay template box -->
+    <div id="rulesModalOverlay" class="hidden modal-overlay-shroud" onclick="closeRulesModal()"></div>
+    <div id="rulesModal" class="hidden rules-popup-card">
+        <h3 style="color: var(--accent-color); margin-top: 0;">How To Play Tetris</h3>
+        <p><strong>Practice:</strong> Infinite running timer. Stress-free practicing environment.</p>
+        <p><strong>Single Player:</strong> Classic standard challenge mode metrics against your own high score.</p>

@@ -177,7 +177,6 @@
             <button class="btn-style" onclick="enterRoomArena(2)">Join Room Arena #2</button>
         </div>
     </div>
-
     <!-- MAIN STRATEGIC GAMEPLAY WORKSPACE DISPLAY -->
     <div id="gameScreen" class="game-container hidden">
         
@@ -243,3 +242,266 @@
         <h3 style="color: var(--accent-color); margin-top: 0;">How To Play Tetris</h3>
         <p><strong>Practice:</strong> Infinite running timer. Stress-free practicing environment.</p>
         <p><strong>Single Player:</strong> Classic standard challenge mode metrics against your own high score.</p>
+        <p><strong>Competition Mode:</strong> Live real-time execution race against an opponent tracking screen matrix side-by-side!</p>
+        <p style="border-top: 1px solid #333; padding-top: 10px; font-size: 0.85rem; color: var(--sub-text);">
+            Losing or running out of time inside an arena will never kick you from the room server. Simply select "Play Again" or change rooms using the leave terminal!
+        </p>
+        <button class="btn-style" onclick="closeRulesModal()" style="margin-top: 10px; width: 100%;">Close Rules</button>
+    </div>
+    <script>
+        const socket = io();
+        
+        let currentUsername = "";
+        let currentActiveRoomId = null;
+        let selectedPlayMode = "practice";
+        let lastSelectedMode = "practice";
+        let gameActive = false;
+        
+        let matchTimerCountdownId = null;
+        let gameTimeRemaining = 120;
+        let gameEngineTickIntervalId = null;
+
+        // Mock Tetris engine parameters
+        let currentGridMatrix = Array.from({length: 20}, () => Array(10).fill(0));
+        let currentPlayerScore = 0;
+        let currentLevel = 1;
+        let totalLinesCleared = 0;
+
+        // 3. LocalStorage persistence validation on launch
+        window.addEventListener('DOMContentLoaded', () => {
+            const cachedUsername = localStorage.getItem('tetris_saved_username');
+            if (cachedUsername) {
+                currentUsername = cachedUsername;
+                if (document.getElementById('lobbyGreetingName')) {
+                    document.getElementById('lobbyGreetingName').innerText = currentUsername;
+                }
+                if (document.getElementById('localPlayerHeader')) {
+                    document.getElementById('localPlayerHeader').innerText = `${currentUsername} (You)`;
+                }
+                
+                socket.emit('player-login', { username: currentUsername });
+                
+                document.getElementById('authScreen').classList.add('hidden');
+                document.getElementById('lobbyScreen').classList.remove('hidden');
+            }
+        });
+
+        // FIXED: Explicitly defining the manual form login identity routine
+        function handleManualFormLogin() {
+            const usernameInput = document.getElementById('usernameInput');
+            if (!usernameInput) return;
+            
+            const val = usernameInput.value.trim();
+            if(!val) { alert("Please input a valid player name."); return; }
+            
+            currentUsername = val;
+            localStorage.setItem('tetris_saved_username', currentUsername);
+            
+            if (document.getElementById('lobbyGreetingName')) {
+                document.getElementById('lobbyGreetingName').innerText = currentUsername;
+            }
+            if (document.getElementById('localPlayerHeader')) {
+                document.getElementById('localPlayerHeader').innerText = `${currentUsername} (You)`;
+            }
+            
+            socket.emit('player-login', { username: currentUsername });
+            
+            document.getElementById('authScreen').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+        }
+
+        function handleSignOutAndForget() {
+            localStorage.removeItem('tetris_saved_username');
+            currentUsername = "";
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('authScreen').classList.remove('hidden');
+        }
+
+        function enterRoomArena(roomId) {
+            currentActiveRoomId = roomId;
+            socket.emit('join-room', { roomId: roomId, username: currentUsername, chips: 250 });
+            
+            document.getElementById('lobbyScreen').classList.add('hidden');
+            document.getElementById('gameScreen').classList.remove('hidden');
+            document.getElementById('chatLog').innerHTML = "";
+            
+            restartLocalGame();
+        }
+        // 6. Leaving rooms without logging out identity
+        function leaveCurrentRoom() {
+            socket.emit('leave-room');
+            
+            gameActive = false;
+            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId);
+            if (gameEngineTickIntervalId) clearInterval(gameEngineTickIntervalId);
+            
+            document.getElementById('lossOverlay').classList.add('hidden');
+            document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden');
+            currentActiveRoomId = null;
+        }
+
+        // 1 & 7. Selection box variant actions
+        function handleModeChange(value) {
+            if (value === "RULES_TAB") {
+                document.getElementById('rulesModalOverlay').classList.remove('hidden');
+                document.getElementById('rulesModal').classList.remove('hidden');
+                document.getElementById('modeSelect').value = lastSelectedMode;
+                return;
+            }
+            selectedPlayMode = value;
+            lastSelectedMode = value;
+            
+            // 2. Control display layout configurations for side-by-side splits
+            const oppWrapper = document.getElementById('opponentWrapper');
+            if (selectedPlayMode === "competition") {
+                oppWrapper.classList.remove('hidden');
+            } else {
+                oppWrapper.classList.add('hidden');
+            }
+            restartLocalGame();
+        }
+
+        function closeRulesModal() {
+            document.getElementById('rulesModalOverlay').classList.add('hidden');
+            document.getElementById('rulesModal').classList.add('hidden');
+        }
+
+        // 4. Integrated Chat message routing displays
+        function sendChatMessage() {
+            const inp = document.getElementById('chatInput');
+            if (!inp) return;
+            const txt = inp.value.trim();
+            if(!txt) return;
+            
+            socket.emit('send-chat', { user: currentUsername, text: txt });
+            inp.value = "";
+        }
+
+        socket.on('receive-chat', (msg) => {
+            const log = document.getElementById('chatLog');
+            if (!log) return;
+            const row = document.createElement('div');
+            row.className = "chat-msg";
+            
+            if (msg.user === 'SYSTEM') {
+                row.innerHTML = `<span class="system-tag">[SYSTEM]:</span> <span>${msg.text}</span>`;
+            } else {
+                row.innerHTML = `<span class="user-tag">[${msg.user}]:</span> <span>${msg.text}</span>`;
+            }
+            log.appendChild(row);
+            log.scrollTop = log.scrollHeight;
+        });
+
+        // 5. Active dynamic counter rendering
+        socket.on('room-update', (room) => {
+            if (room && room.id === currentActiveRoomId) {
+                const totalCount = room.players.length + room.spectators.length;
+                document.getElementById('roomPopulationCounter').innerText = totalCount;
+            }
+        });
+
+        // Timer management
+        function startMatchTimerSequence() {
+            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId);
+            gameTimeRemaining = 120;
+            updateTimerDisplayUI();
+
+            matchTimerCountdownId = setInterval(() => {
+                gameTimeRemaining--;
+                updateTimerDisplayUI();
+                
+                if (gameTimeRemaining <= 0) {
+                    clearInterval(matchTimerCountdownId);
+                    triggerGameLoss(true);
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplayUI() {
+            const timerDisplay = document.getElementById('gameTimer');
+            if (!timerDisplay) return;
+            let mins = Math.floor(gameTimeRemaining / 60).toString().padStart(2, '0');
+            let secs = (gameTimeRemaining % 60).toString().padStart(2, '0');
+            timerDisplay.innerText = `${mins}:${secs}`;
+        }
+
+        // 3. Loss management routines (no-kick triggers)
+        function triggerGameLoss(isTimerExpiry = false) {
+            gameActive = false;
+            if (gameEngineTickIntervalId) clearInterval(gameEngineTickIntervalId);
+            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId);
+
+            document.getElementById('lossOverlay').classList.remove('hidden');
+
+            const alertText = isTimerExpiry 
+                ? `⏳ Match round clock expired for ${currentUsername}. Staying in the arena room.`
+                : `💥 Grid collision lockout for ${currentUsername}. Staying in the arena room.`;
+
+            socket.emit('send-chat', { user: 'SYSTEM', text: alertText });
+        }
+
+        function restartLocalGame() {
+            document.getElementById('lossOverlay').classList.add('hidden');
+            currentGridMatrix = Array.from({length: 20}, () => Array(10).fill(0));
+            currentPlayerScore = 0;
+            totalLinesCleared = 0;
+            gameActive = true;
+
+            startMatchTimerSequence();
+            runEngineLoop();
+        }
+
+        function runEngineLoop() {
+            if (!gameActive) return;
+
+            // Simple random game over test framework
+            if (Math.random() > 0.94 && selectedPlayMode !== "practice") {
+                triggerGameLoss(false);
+                return;
+            }
+
+            const localCanvas = document.getElementById('localCanvas');
+            if (localCanvas) {
+                const localCtx = localCanvas.getContext('2d');
+                localCtx.clearRect(0, 0, localCanvas.width, localCanvas.height);
+                localCtx.fillStyle = "#3498db";
+                localCtx.fillRect(40, 60, 40, 40); // Base mock graphic block
+            }
+
+            // 2. Broadcast telemetry coordinates to opponent during active competition split
+            if (selectedPlayMode === "competition") {
+                socket.emit('sync-board-matrix', {
+                    grid: currentGridMatrix,
+                    score: currentPlayerScore,
+                    level: currentLevel,
+                    lines: totalLinesCleared,
+                    curPlayer: currentUsername
+                });
+            }
+
+            gameEngineTickIntervalId = setTimeout(runEngineLoop, 500);
+        }
+
+        // Match matrix telemetry sync reception processing
+        socket.on('spectate-frame', (data) => {
+            if (selectedPlayMode !== "competition" || !data.boards) return;
+            const opponentId = Object.keys(data.boards).find(id => id !== socket.id);
+            if (opponentId) {
+                const oppData = data.boards[opponentId];
+                renderOpponentCanvasGrid(oppData.grid);
+            }
+        });
+
+        function renderOpponentCanvasGrid(oppGrid) {
+            const oppCanvas = document.getElementById('opponentCanvas');
+            if (!oppCanvas) return;
+            const oppCtx = oppCanvas.getContext('2d');
+            oppCtx.clearRect(0, 0, oppCanvas.width, oppCanvas.height);
+            
+            oppCtx.fillStyle = "#e74c3c";
+            oppCtx.fillRect(80, 120, 40, 40); // Opponent mock block mirror
+        }
+    </script>
+</body>
+</html>

@@ -76,7 +76,7 @@
             cursor: pointer;
         }
 
-        /* 10 Room Selection Grid Menu */
+        /* 10 Matchmaking Room Configuration Selection Dashboard */
         .rooms-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -84,7 +84,7 @@
             margin-top: 15px;
         }
 
-        /* Responsive Split Layout: Game Left, Chat Right */
+        /* Responsive Workspace: Split Screen on big viewports, single grid on mobile */
         .arcade-split-workspace {
             display: flex;
             flex-direction: row;
@@ -100,7 +100,7 @@
             align-items: center;
         }
 
-        /* Chat Relocation Window styling layout (Right Side) */
+        /* Lobby Chat Placement Framework (Right Side on Laptops/Desktops) */
         .chat-column-right {
             flex: 1;
             background: var(--chat-bg);
@@ -110,6 +110,7 @@
             flex-direction: column;
             border: 1px solid var(--secondary-accent);
             min-height: 450px;
+            box-sizing: border-box;
         }
 
         .chat-log {
@@ -128,7 +129,7 @@
         .system-tag { color: #51e2f5; font-weight: bold; font-style: italic; }
         .user-tag { color: var(--accent-color); font-weight: bold; }
 
-        /* Boards Side-by-Side Area Configuration */
+        /* Board Canvases Splitting Controls */
         .boards-layout-container {
             display: flex;
             flex-wrap: wrap;
@@ -151,7 +152,7 @@
             height: auto;
         }
 
-        /* Mobile Screen On-Screen Game Controls Area */
+        /* On-Screen Mobile Device Game Buttons */
         .touch-controls-pad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -210,10 +211,10 @@
             z-index: 100;
         }
 
-        /* RESPONSIVE BREAKPOINTS: Fit Laptops, Desktops, Tablets, and Cellphones */
+        /* DEVICE SCREEN BREAKPOINTS: Controls formatting for laptops, cellphones, tablets */
         @media (max-width: 850px) {
             .arcade-split-workspace {
-                flex-direction: column; /* Stack chat below the game on mobile screens & tablets */
+                flex-direction: column; /* Moves Lobby Chat below the board layout automatically on thin screens */
             }
             .chat-column-right {
                 min-height: 250px;
@@ -223,7 +224,7 @@
         @media (max-width: 480px) {
             body { padding: 5px; }
             .auth-container, .lobby-container, .game-container { padding: 12px; }
-            canvas { width: 190px; height: 320px; } /* Adjust canvas slightly smaller on small phone views */
+            canvas { width: 190px; height: 320px; }
         }
     </style>
 </head>
@@ -231,7 +232,7 @@
 
     <h2>Tetris Network Arcade Suite</h2>
 
-    <!-- IDENTITY SIGN IN -->
+    <!-- CHOOSE IDENTITY SIGN IN -->
     <div id="authScreen" class="auth-container">
         <h3>Choose Player Identity</h3>
         <div style="display: flex; gap: 10px;">
@@ -248,7 +249,6 @@
         </div>
         <p>Select a matchmaking arena down below to load into a seat:</p>
         
-        <!-- Expanded dynamically to 10 actionable rooms -->
         <div class="rooms-grid">
             <button class="btn-style" onclick="enterRoomArena(1)">Join Room 101</button>
             <button class="btn-style" onclick="enterRoomArena(2)">Join Room 102</button>

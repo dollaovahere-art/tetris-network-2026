@@ -123,3 +123,31 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3050;
 server.listen(PORT, () => console.log(`🚀 Server listening smoothly on port ${PORT}`));
+// Server state tracking metrics dictionary
+let roomCounts = {};
+
+io.on('connection', (socket) => {
+    
+    // When a user provides their name and enters a room
+    socket.on('join_room', (data) => {
+        socket.join(data.roomName);
+        socket.username = data.username; // Bind identity directly to the connection socket
+        
+        // Option 5: Update the active room population counter metrics
+        if(!roomCounts[data.roomName]) roomCounts[data.roomName] = 0;
+        roomCounts[data.roomName]++;
+        
+        // Broadcast the updated counter to everyone in that room
+        io.to(data.roomName).emit('room_population_update', roomCounts[data.roomName]);
+        
+        // Option 4: Let everyone know the user name of who entered the room
+        io.to(data.roomName).emit('system_message', `${data.username} joined the arena.`);
+    });
+
+    // Handle user disconnecting or leaving a room manually (Option 6)
+    socket.on('leave_room', (roomName) => {
+        socket.leave(roomName);
+        if(roomCounts[roomName]) roomCounts[roomName]--;
+        io.to(roomName).emit('room_population_update', roomCounts[roomName]);
+    });
+});

@@ -17,6 +17,58 @@
             margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
             background: var(--bg); color: var(--white); font-family: 'Segoe UI', Arial, sans-serif;
             display: flex; flex-direction: column; user-select: none; -webkit-user-select: none; touch-action: none;
+            <!-- 1. Dropdown Selection Box with Modes & Rules -->
+<label for="modeSelect">Game Variant Mode:</label>
+<select id="modeSelect" onchange="handleModeChange(this.value)">
+    <option value="practice">Practice Mode</option>
+    <option value="single">Single Player</option>
+    <option value="competition">Competition (Versus)</option>
+    <option value="RULES_TAB">--- 📖 View Rules ---</option>
+</select>
+
+<!-- 2. Room Counter & Leave Button -->
+<div>
+    <p>Users in Room: <span id="roomPopulationCounter">1</span></p>
+    <button id="leaveRoomBtn" onclick="leaveCurrentRoom()">Leave Room</button>
+</div>
+
+<!-- 3. Dual Canvas Layout (For side-by-side Competition Mode) -->
+<div class="boards-area" style="display: flex; gap: 20px;">
+    <!-- Your Existing Local Canvas -->
+    <div class="board-wrapper" style="position: relative;">
+        <h4>Your Grid</h4>
+        <canvas id="localCanvas" width="240" height="400"></canvas>
+        
+        <!-- Non-kick Game Over Choice Overlay -->
+        <div id="lossOverlay" class="hidden" style="position: absolute; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; flex-direction:column; justify-content:center; align-items:center; gap:10px;">
+            <h3>GAME OVER</h3>
+            <button onclick="restartLocalGame()">Play Again</button>
+            <button onclick="leaveCurrentRoom()">Get Up From Seat</button>
+        </div>
+    </div>
+
+    <!-- Second Canvas: Only shown during Competition Mode -->
+    <div id="opponentWrapper" class="hidden">
+        <h4>Opponent Live Feed</h4>
+        <canvas id="opponentCanvas" width="240" height="400"></canvas>
+    </div>
+</div>
+
+<!-- 4. Rules Popup Modal Window -->
+<div id="rulesModal" class="hidden" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; padding: 20px; border: 2px solid red; z-index: 100;">
+    <h2>How to Play Tetris</h2>
+    <p>Practice: Infinite time. Single Player: Classic survival. Competition: Side-by-side battle!</p>
+    <button onclick="closeRulesModal()">Close Rules</button>
+</div>
+
+<!-- 5. Lobby Chat Space -->
+<div class="chat-section">
+    <h4>Lobby Messaging</h4>
+    <div id="chatLog" style="height:120px; overflow-y:auto; background:#000;"></div>
+    <input type="text" id="chatInput" placeholder="Type a message..." onkeypress="if(event.key === 'Enter') sendChatMessage()">
+    <button onclick="sendChatMessage()">Send</button>
+</div>
+
         }
         h1 { color: var(--text); text-shadow: 0 0 10px rgba(233, 69, 96, 0.4); margin: 5px 0 0 0; font-size: 18px; text-align: center; flex-shrink: 0; }
         .hidden { display: none !important; }
@@ -111,6 +163,67 @@
         </div>
     </div>
     <script>
+        // State variables to inject
+let selectedPlayMode = "practice";
+let lastSelectedMode = "practice";
+let currentUser = "Player_" + Math.floor(Math.random() * 1000); // Keeps user signed in
+
+// Handles Option 1 & 7: Selection box mode switches and Rules tab popup trigger
+function handleModeChange(value) {
+    if (value === "RULES_TAB") {
+        document.getElementById('rulesModal').classList.remove('hidden');
+        document.getElementById('modeSelect').value = lastSelectedMode; // Revert select display
+        return;
+    }
+    selectedPlayMode = value;
+    lastSelectedMode = value;
+    
+    // Handles Option 2: Show opponent side-by-side ONLY during active competition
+    const oppWrapper = document.getElementById('opponentWrapper');
+    if (selectedPlayMode === "competition") {
+        oppWrapper.classList.remove('hidden');
+    } else {
+        oppWrapper.classList.add('hidden');
+    }
+}
+
+function closeRulesModal() {
+    document.getElementById('rulesModal').classList.add('hidden');
+}
+
+// Handles Option 3: Loss state choice overlay (does not kick user from room)
+function triggerGameLoss() {
+    // Call this inside your existing code wherever your block collision logic triggers a loss
+    document.getElementById('lossOverlay').classList.remove('hidden');
+}
+
+function restartLocalGame() {
+    document.getElementById('lossOverlay').classList.add('hidden');
+    // Call your existing game reset/start function here (e.g., initGame() or startGame())
+}
+
+// Handles Option 6: Leave Room Button Logic
+function leaveCurrentRoom() {
+    document.getElementById('lossOverlay').classList.add('hidden');
+    alert("Leaving room... returning to room picker.");
+    // Insert code here to emit a room leave event to your server if tracking sockets
+}
+
+// Handles Option 4: Chat input displaying user names
+function sendChatMessage() {
+    const inp = document.getElementById('chatInput');
+    const msg = inp.value.trim();
+    if (!msg) return;
+    
+    const log = document.getElementById('chatLog');
+    const row = document.createElement('div');
+    // Injects persistent signed-in player name directly next to message block
+    row.innerHTML = `<strong>[${currentUser}]:</strong> <span>${msg}</span>`;
+    log.appendChild(row);
+    log.scrollTop = log.scrollHeight;
+    inp.value = "";
+}
+
         let socket = null;
         let myUsername = "";
         let myChips = 250;

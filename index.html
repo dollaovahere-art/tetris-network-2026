@@ -10,7 +10,7 @@
         :root {
             --bg-color: #0b0c10;
             --panel-color: #1f2833;
-            --accent-color: #ff4757;
+            --accent-color: #0056b3; 
             --secondary-accent: #2f3542;
             --text-color: #ffffff;
             --sub-text: #c5a059;
@@ -23,7 +23,7 @@
             color: var(--text-color);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 5px;
+            padding: 4px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -31,19 +31,18 @@
             justify-content: center;
             height: 100vh;
             width: 100vw;
-            overflow: hidden; /* Zero-scroll scaling on laptops & cellphones */
+            overflow: hidden; /* Fully prevents screen scrolling on all devices */
         }
-
         .hidden { display: none !important; }
 
         .auth-container, .lobby-container, .game-container {
             background: var(--panel-color);
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.6);
             width: 100%;
             max-width: 1100px;
-            height: 96vh;
+            height: 98vh;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
@@ -55,56 +54,56 @@
             background: var(--secondary-accent);
             color: #fff;
             border: 1px solid var(--accent-color);
-            padding: 8px;
+            padding: 6px;
             border-radius: 4px;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
 
         .btn-style {
             background: var(--accent-color);
             color: white;
             border: none;
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: background 0.2s;
         }
-        .btn-style:hover { background: #ff6b81; }
+        .btn-style:hover { background: #004085; }
         .btn-style.secondary { background: #57606f; }
+        .btn-style.secondary:hover { background: #747d8c; }
         .mode-select-style {
             background: var(--secondary-accent);
             color: #fff;
             border: 1px solid var(--accent-color);
-            padding: 6px 10px;
+            padding: 4px 8px;
             border-radius: 4px;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             cursor: pointer;
         }
 
         .rooms-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-            margin-top: 10px;
+            gap: 6px;
+            margin-top: 5px;
             flex: 1;
             overflow-y: auto;
         }
 
-        /* Responsive Split Screen Workspace Setup */
         .arcade-split-workspace {
             display: flex;
             flex-direction: row;
-            gap: 15px;
+            gap: 12px;
             width: 100%;
             flex: 1;
             min-height: 0;
-            margin-top: 10px;
+            margin-top: 5px;
         }
 
         .game-column-left {
-            flex: 1.4;
+            flex: 1.5;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -116,26 +115,24 @@
             flex: 1;
             background: var(--chat-bg);
             border-radius: 6px;
-            padding: 10px;
+            padding: 8px;
             display: flex;
             flex-direction: column;
             border: 1px solid var(--secondary-accent);
             min-height: 0;
         }
-
         .chat-log {
             flex: 1;
             overflow-y: auto;
             background: #000;
-            padding: 8px;
+            padding: 6px;
             border-radius: 5px;
             font-family: monospace;
             text-align: left;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
-        .chat-msg { margin-bottom: 4px; font-size: 0.85rem; line-height: 1.3; }
-        .user-tag { color: var(--accent-color); font-weight: bold; }
+        .chat-msg { margin-bottom: 3px; font-size: 0.8rem; line-height: 1.2; }
 
         .boards-layout-container {
             display: flex;
@@ -146,6 +143,7 @@
             min-height: 0;
             width: 100%;
         }
+
         .canvas-wrapper {
             position: relative;
             text-align: center;
@@ -153,34 +151,43 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
         }
 
         canvas {
             background-color: #000;
             border: 2px solid var(--secondary-accent);
             border-radius: 6px;
-            max-height: 65vh; /* Fits screen limits perfectly on laptop & mobile viewport */
+            max-height: 52vh; 
             width: auto;
             aspect-ratio: 240 / 400;
         }
 
+        .next-preview-box {
+            background: #000;
+            border: 1px solid var(--accent-color);
+            border-radius: 4px;
+            width: 60px;
+            height: 60px;
+            margin-bottom: 4px;
+        }
         .touch-controls-pad {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
+            gap: 4px;
             width: 100%;
-            max-width: 280px;
-            margin-top: 5px;
+            max-width: 260px;
+            margin-top: 3px;
         }
 
         .touch-btn {
             background: var(--secondary-accent);
             color: #fff;
             border: 1px solid var(--accent-color);
-            padding: 10px 2px;
+            padding: 8px 1px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             cursor: pointer;
             text-align: center;
             user-select: none;
@@ -199,27 +206,27 @@
             z-index: 10;
         }
 
-        /* Leaderboard Specific Panel Styles */
         .leaderboard-widget-panel {
             background: rgba(0,0,0,0.3);
             border: 1px solid var(--secondary-accent);
             border-radius: 6px;
-            padding: 10px;
-            margin-top: 10px;
+            padding: 6px;
+            margin-top: 4px;
         }
         .leaderboard-row {
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
-            border-bottom: 1px solid #222;
-            font-size: 0.85rem;
+            padding: 2px 0;
+            font-size: 0.8rem;
         }
 
         @media (max-width: 768px) {
             .rooms-grid { grid-template-columns: repeat(2, 1fr); }
-            .arcade-split-workspace { flex-direction: column; }
-            .chat-column-right { flex: 0.7; min-height: 0; }
-            canvas { max-height: 42vh; }
+            .arcade-split-workspace { flex-direction: column; gap: 4px; }
+            .chat-column-right { flex: 0.6; min-height: 0; padding: 4px; }
+            canvas { max-height: 30vh; } 
+            .game-container { height: 98vh; padding: 4px; }
+            .touch-btn { padding: 6px 1px; font-size: 0.7rem; }
         }
     </style>
 </head>
@@ -227,8 +234,8 @@
 
     <!-- CHOOSE IDENTITY SIGN IN -->
     <div id="authScreen" class="auth-container">
-        <h3 style="margin-top:0; text-align:center;">Tetris identity</h3>
-        <div style="display: flex; flex-direction: column; gap: 10px;">
+        <h3 style="margin-top:0; text-align:center; color:var(--accent-color);">Tetris identity</h3>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
             <input type="text" id="usernameInput" class="input-style" placeholder="Enter Player Name...">
             <button class="btn-style" onclick="handleManualFormLogin()">Enter Arena</button>
         </div>
@@ -236,20 +243,19 @@
 
     <!-- 10 MATCHMAKING ROOMS LOBBY SELECTION BOARD -->
     <div id="lobbyScreen" class="lobby-container hidden">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <h4 style="margin:0;">Welcome, <span id="lobbyGreetingName" class="user-tag">Player</span>!</h4>
-            <button class="btn-style secondary" style="padding: 4px 10px; font-size: 0.8rem;" onclick="handleSignOutAndForget()">Sign Out</button>
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h5 style="margin:0;">Welcome, <span id="lobbyGreetingName" style="color:var(--accent-color);">Player</span>!</h5>
+            <button class="btn-style secondary" style="padding: 2px 8px; font-size: 0.75rem;" onclick="handleSignOutAndForget()">Sign Out</button>
         </div>
         
-        <!-- Persistent Server High Rankings Panel Board -->
         <div class="leaderboard-widget-panel">
-            <h5 style="margin: 0 0 5px 0; color: var(--gold); text-align: center;">🏆 Global Arcade Leaderboard</h5>
+            <h6 style="margin: 0 0 3px 0; color: var(--gold); text-align: center;">🏆 Global Arcade Leaderboard</h6>
             <div id="leaderboardRowsContainer">
-                <div style="text-align:center; font-size:0.8rem; color:#888;">Fetching rank balances...</div>
+                <div style="text-align:center; font-size:0.75rem; color:#888;">Fetching rank balances...</div>
             </div>
         </div>
 
-        <p style="margin: 8px 0 2px 0; font-size: 0.85rem; font-weight: bold;">Select an arena channel to fill a seat:</p>
+        <p style="margin: 4px 0 2px 0; font-size: 0.8rem; font-weight: bold;">Select an arena channel:</p>
         <div class="rooms-grid">
             <button class="btn-style" onclick="enterRoomArena(1)">Join Room 101</button>
             <button class="btn-style" onclick="enterRoomArena(2)">Join Room 102</button>
@@ -265,9 +271,9 @@
     </div>
     <!-- MAIN STRATEGIC GAMEPLAY WORKSPACE DISPLAY -->
     <div id="gameScreen" class="game-container hidden">
-        <div class="room-controls-row" style="display: flex; gap: 10px; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--secondary-accent); padding-bottom: 10px;">
+        
+        <div class="room-controls-row" style="display: flex; gap: 8px; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--secondary-accent); padding-bottom: 4px;">
             <div>
-                <label for="modeSelect" style="font-weight: bold; margin-right: 3px; font-size: 0.85rem;">Mode:</label>
                 <select id="modeSelect" class="mode-select-style" onchange="handleModeChange(this.value)">
                     <option value="single">Single Player Mode</option>
                     <option value="practice">Practice Mode</option>
@@ -275,31 +281,32 @@
                 </select>
             </div>
             
-            <div style="display: flex; align-items: center; gap: 10px;">
-                <div style="font-weight: bold; background: #000; padding: 4px 8px; border-radius: 4px; border: 1px solid var(--accent-color); font-size: 0.85rem;">
-                    Time Left: <span id="gameTimer" style="color: var(--accent-color);">02:00</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="font-weight: bold; background: #000; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--gold); font-size: 0.75rem; color: var(--gold);">
+                    💰 Balance: <span id="localChipsDisplay">250</span>
                 </div>
-                <p style="margin: 0; font-size: 0.8rem;">Players: <span id="roomPopulationCounter" style="font-weight: bold; color: var(--accent-color);">0</span></p>
-                <button id="leaveRoomBtn" class="btn-style" style="padding: 4px 10px; font-size: 0.8rem;" onclick="leaveCurrentRoom()">Leave Room</button>
+                <div style="font-weight: bold; background: #000; padding: 2px 6px; border-radius: 4px; border: 1px solid var(--accent-color); font-size: 0.75rem;">
+                    Time: <span id="gameTimer" style="color: var(--accent-color);">02:00</span>
+                </div>
+                <button id="leaveRoomBtn" class="btn-style" style="padding: 2px 6px; font-size: 0.75rem;" onclick="leaveCurrentRoom()">Leave</button>
             </div>
         </div>
 
         <div class="arcade-split-workspace">
             <div class="game-column-left">
+                <div style="font-size:0.7rem; color:var(--sub-text); margin-bottom:1px;">Next Piece:</div>
+                <canvas id="nextCanvas" class="next-preview-box" width="60" height="60"></canvas>
+
                 <div class="boards-layout-container">
                     <div class="canvas-wrapper">
-                        <h5 id="localPlayerHeader" style="margin: 2px 0; font-size: 0.85rem;">Your Grid</h5>
                         <canvas id="localCanvas" width="240" height="400"></canvas>
-                        
-                        <!-- Fixed: Removed "get up from seat", leaving play again button exclusively -->
                         <div id="lossOverlay" class="hidden game-choice-overlay">
-                            <h4 style="color: var(--accent-color); margin: 0 0 10px 0;">ROUND COMPLETED</h4>
-                            <button class="btn-style" style="width: 120px;" onclick="restartLocalGame()">Play Again</button>
+                            <h5 style="color: var(--accent-color); margin: 0 0 8px 0;">ROUND COMPLETED</h5>
+                            <button class="btn-style" style="width: 100px; padding:4px;" onclick="restartLocalGame()">Play Again</button>
                         </div>
                     </div>
 
                     <div id="opponentWrapper" class="canvas-wrapper hidden">
-                        <h5 style="margin: 2px 0; font-size: 0.85rem;">Opponent Live Feed</h5>
                         <canvas id="opponentCanvas" width="240" height="400"></canvas>
                     </div>
                 </div>
@@ -307,21 +314,21 @@
                 <div class="touch-controls-pad">
                     <button class="touch-btn" onclick="handleMobileAction('LEFT')">◀ Left</button>
                     <button class="touch-btn" onclick="handleMobileAction('ROTATE')">🔄 Rotate</button>
-                    <button class="touch-btn" onclick="handleMobileAction('DROP')"> Hard Drop</button>
+                    <button class="touch-btn" onclick="handleMobileAction('DROP')">⬇ Drop</button>
                     <button class="touch-btn" onclick="handleMobileAction('RIGHT')">Right ▶</button>
                 </div>
             </div>
 
-            <!-- Fix: Cleared system tags, displays direct text messages from users exclusively -->
             <div class="chat-column-right">
-                <h5 style="margin: 0 0 5px 0; border-bottom: 1px solid var(--secondary-accent); padding-bottom: 2px; color: var(--accent-color); font-size: 0.85rem;">Lobby Chat</h5>
+                <h6 style="margin: 0 0 3px 0; border-bottom: 1px solid var(--secondary-accent); padding-bottom: 5px; color: var(--accent-color); font-size: 0.8rem;">Lobby Chat</h6>
                 <div id="chatLog" class="chat-log"></div>
-                <div style="display: flex; gap: 5px;">
-                    <input type="text" id="chatInput" class="input-style" placeholder="Type a message..." style="flex: 1; font-size: 0.8rem; padding: 6px;" onkeypress="if(event.key === 'Enter') sendChatMessage()">
-                    <button class="btn-style" style="padding: 0 12px; font-size: 0.8rem;" onclick="sendChatMessage()">Send</button>
+                <div style="display: flex; gap: 4px;">
+                    <input type="text" id="chatInput" class="input-style" placeholder="Message..." style="flex: 1; font-size: 0.75rem; padding: 4px;" onkeypress="if(event.key === 'Enter') sendChatMessage()">
+                    <button class="btn-style" style="padding: 0 8px; font-size: 0.75rem;" onclick="sendChatMessage()">Send</button>
                 </div>
             </div>
         </div>
+
     </div>
     <script>
         const socket = io();
@@ -336,20 +343,40 @@
         let gameTimeRemaining = 120;
         let gameEngineTickIntervalId = null;
 
-        let currentGridMatrix = Array.from({length: 20}, () => Array(10).fill(0));
-        let mockBlockX = 4; 
-        let mockBlockY = 0; 
-        let currentPlayerScore = 0;
-        let currentLevel = 1;
-        let totalLinesCleared = 0;
-        let userChipsBalance = 250; 
+        const COLS = 10, ROWS = 20;
+        let gameGrid = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+        
+        const COLOR_MAP = {
+            0: "#000000",
+            1: "#00f0f0", // Cyan (I-Piece)
+            2: "#0000f0", // Dark Blue (J-Piece)
+            3: "#f0a000", // Orange (L-Piece)
+            4: "#f0f000", // Yellow (O-Square)
+            5: "#00f000", // Green (S-Piece)
+            6: "#a000f0", // Purple (T-Piece)
+            7: "#f00000"  // Red (Z-Piece)
+        };
 
+        const SHAPES = [
+            [],
+            [[1,1,1,1]], 
+            [[2,0,0],[2,2,2]], 
+            [[0,0,3],[3,3,3]], 
+            [[4,4],[4,4]], 
+            [[0,5,5],[5,5,0]], 
+            [[0,6,0],[6,6,6]], 
+            [[7,7,0],[0,7,7]]  
+        ];
+
+        let currentPiece = null;
+        let nextPiece = null;
+        let pieceX = 3, pieceY = 0;
+        let userChipsBalance = 250;
         window.addEventListener('DOMContentLoaded', () => {
             const cachedUsername = localStorage.getItem('tetris_saved_username');
             if (cachedUsername) {
                 currentUsername = cachedUsername;
                 document.getElementById('lobbyGreetingName').innerText = currentUsername;
-                document.getElementById('localPlayerHeader').innerText = `${currentUsername}`;
                 socket.emit('player-login', { username: currentUsername });
                 document.getElementById('authScreen').classList.add('hidden');
                 document.getElementById('lobbyScreen').classList.remove('hidden');
@@ -357,239 +384,259 @@
             setupLaptopKeyboardListeners();
         });
 
-        // Captures data streams from database hooks and paints the ranking data rows
         socket.on('leaderboard-data', (topPlayersList) => {
             const container = document.getElementById('leaderboardRowsContainer');
-            if (!container) return;
-            container.innerHTML = "";
-
-            if (topPlayersList.length === 0) {
-                container.innerHTML = `<div style="text-align:center; font-size:0.8rem; color:#888;">No scores logged yet. Be the first!</div>`;
-                return;
-            }
-
+            if (!container) return; container.innerHTML = "";
             topPlayersList.forEach((player, index) => {
                 const row = document.createElement('div');
                 row.className = "leaderboard-row";
-                row.innerHTML = `
-                    <span><strong>#${index + 1}</strong> ${player.username}</span>
-                    <span style="color:var(--sub-text); font-weight:bold;">${player.chips} pts</span>
-                `;
+                row.innerHTML = `<span><strong>#${index + 1}</strong> ${player.username}</span><span style="color:var(--sub-text); font-weight:bold;">${player.chips} pts</span>`;
                 container.appendChild(row);
             });
         });
 
         function handleManualFormLogin() {
             const usernameInput = document.getElementById('usernameInput');
-            if (!usernameInput) return;
-            const val = usernameInput.value.trim();
+            if (!usernameInput) return; const val = usernameInput.value.trim();
             if(!val) { alert("Please input a valid player name."); return; }
-            
-            currentUsername = val;
-            localStorage.setItem('tetris_saved_username', currentUsername);
+            currentUsername = val; localStorage.setItem('tetris_saved_username', currentUsername);
             document.getElementById('lobbyGreetingName').innerText = currentUsername;
-            document.getElementById('localPlayerHeader').innerText = `${currentUsername}`;
-            
             socket.emit('player-login', { username: currentUsername });
             document.getElementById('authScreen').classList.add('hidden');
             document.getElementById('lobbyScreen').classList.remove('hidden');
         }
 
         function handleSignOutAndForget() {
-            localStorage.removeItem('tetris_saved_username');
-            currentUsername = "";
-            document.getElementById('lobbyScreen').classList.add('hidden');
-            document.getElementById('authScreen').classList.remove('hidden');
+            localStorage.removeItem('tetris_saved_username'); currentUsername = "";
+            document.getElementById('lobbyScreen').classList.add('hidden'); document.getElementById('authScreen').classList.remove('hidden');
         }
 
         function enterRoomArena(roomId) {
             currentActiveRoomId = roomId;
             socket.emit('join-room', { roomId: roomId, username: currentUsername, chips: userChipsBalance });
-            document.getElementById('lobbyScreen').classList.add('hidden');
-            document.getElementById('gameScreen').classList.remove('hidden');
-            document.getElementById('chatLog').innerHTML = "";
+            document.getElementById('lobbyScreen').classList.add('hidden'); document.getElementById('gameScreen').classList.remove('hidden');
             restartLocalGame();
         }
+
         function leaveCurrentRoom() {
-            socket.emit('leave-room');
-            gameActive = false;
-            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId);
-            if (gameEngineTickIntervalId) clearInterval(gameEngineTickIntervalId);
-            
-            document.getElementById('lossOverlay').classList.add('hidden');
-            document.getElementById('gameScreen').classList.add('hidden');
-            document.getElementById('lobbyScreen').classList.remove('hidden');
-            currentActiveRoomId = null;
+            socket.emit('leave-room'); gameActive = false;
+            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId); if (gameEngineTickIntervalId) clearInterval(gameEngineTickIntervalId);
+            document.getElementById('lossOverlay').classList.add('hidden'); document.getElementById('gameScreen').classList.add('hidden');
+            document.getElementById('lobbyScreen').classList.remove('hidden'); currentActiveRoomId = null;
         }
 
         function handleModeChange(value) {
-            selectedPlayMode = value;
-            lastSelectedMode = value;
-            
-            const oppWrapper = document.getElementById('opponentWrapper');
-            if (selectedPlayMode === "competition") {
-                oppWrapper.classList.remove('hidden');
-            } else {
-                oppWrapper.classList.add('hidden');
-            }
+            selectedPlayMode = value; lastSelectedMode = value;
+            document.getElementById('opponentWrapper').classList.toggle('hidden', selectedPlayMode !== "competition");
             restartLocalGame();
         }
 
         function setupLaptopKeyboardListeners() {
-            window.addEventListener('keydown', (event) => {
+            window.addEventListener('keydown', (e) => {
                 if (!gameActive) return;
-                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(event.key)) {
-                    event.preventDefault();
-                }
-
-                if (event.key === 'ArrowLeft') { mockBlockX = Math.max(0, mockBlockX - 1); } 
-                else if (event.key === 'ArrowRight') { mockBlockX = Math.min(9, mockBlockX + 1); } 
-                else if (event.key === 'ArrowDown') { mockBlockY = Math.min(19, mockBlockY + 1); } 
-                else if (event.key === ' ') { mockBlockY = 19; }
-
+                if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
+                if (e.key === 'ArrowLeft') movePiece(-1);
+                if (e.key === 'ArrowRight') movePiece(1);
+                if (e.key === 'ArrowUp') rotatePiece();
+                if (e.key === 'ArrowDown') dropPieceInterval();
                 drawLocalGameBlocks();
             });
         }
 
         function handleMobileAction(actionType) {
             if (!gameActive) return;
-            if (actionType === 'LEFT') { mockBlockX = Math.max(0, mockBlockX - 1); }
-            if (actionType === 'RIGHT') { mockBlockX = Math.min(9, mockBlockX + 1); }
-            if (actionType === 'DROP') { mockBlockY = 19; }
-            
+            if (actionType === 'LEFT') movePiece(-1);
+            if (actionType === 'RIGHT') movePiece(1);
+            if (actionType === 'ROTATE') rotatePiece();
+            if (actionType === 'DROP') dropPieceInterval();
             drawLocalGameBlocks();
         }
 
+        function generateRandomPiece() {
+            const idx = Math.floor(Math.random() * 7) + 1;
+            return SHAPES[idx];
+        }
+
+        function movePiece(dir) {
+            pieceX += dir;
+            if (checkCollision()) pieceX -= dir;
+        }
+
+        function rotatePiece() {
+            const r = currentPiece.map((_, c) => currentPiece.map(row => row[c])).reverse();
+            const old = currentPiece; currentPiece = r;
+            if (checkCollision()) currentPiece = old;
+        }
+
+        function checkCollision() {
+            for (let r = 0; r < currentPiece.length; r++) {
+                for (let c = 0; c < currentPiece[r].length; c++) {
+                    if (currentPiece[r][c]) {
+                        let targetX = pieceX + c, targetY = pieceY + r;
+                        if (targetX < 0 || targetX >= COLS || targetY >= ROWS) return true;
+                        if (targetY >= 0 && gameGrid[targetY][targetX]) return true;
+                    }
+                }
+            }
+            return false;
+        }
+        function dropPieceInterval() {
+            pieceY++;
+            if (checkCollision()) {
+                pieceY--;
+                lockPieceIntoGrid();
+                currentPiece = nextPiece;
+                nextPiece = generateRandomPiece();
+                pieceX = 3; pieceY = 0;
+                if (checkCollision()) triggerGameLoss(); 
+            }
+        }
+
+        function lockPieceIntoGrid() {
+            for (let r = 0; r < currentPiece.length; r++) {
+                for (let c = 0; c < currentPiece[r].length; c++) {
+                    if (currentPiece[r][c]) {
+                        if (pieceY + r >= 0) gameGrid[pieceY + r][pieceX + c] = currentPiece[r][c];
+                    }
+                }
+            }
+            clearGridLines();
+        }
+
+        function clearGridLines() {
+            let initialCount = gameGrid.length;
+            gameGrid = gameGrid.filter(row => row.some(val => val === 0));
+            let linesClearedThisTurn = initialCount - gameGrid.length;
+
+            while (gameGrid.length < ROWS) gameGrid.unshift(Array(COLS).fill(0));
+
+            if (linesClearedThisTurn > 0 && selectedPlayMode !== 'practice') {
+                let chipsReward = 0;
+                if (linesClearedThisTurn === 1) chipsReward = 10;
+                else if (linesClearedThisTurn === 2) chipsReward = 30;
+                else if (linesClearedThisTurn === 3) chipsReward = 60;
+                else if (linesClearedThisTurn >= 4) chipsReward = 150;
+
+                userChipsBalance += chipsReward;
+                document.getElementById('localChipsDisplay').innerText = userChipsBalance;
+                socket.emit('update-wallet-chips', { username: currentUsername, finalChips: userChipsBalance });
+                socket.emit('send-chat', { user: currentUsername, text: `cleared ${linesClearedThisTurn} line(s) for +${chipsReward} Chips!` });
+            }
+        }
+
         function sendChatMessage() {
-            const inp = document.getElementById('chatInput');
-            if (!inp) return;
-            const txt = inp.value.trim();
-            if(!txt) return;
-            socket.emit('send-chat', { user: currentUsername, text: txt });
-            inp.value = "";
+            const inp = document.getElementById('chatInput'); if (!inp) return;
+            const txt = inp.value.trim(); if(!txt) return;
+            socket.emit('send-chat', { user: currentUsername, text: txt }); inp.value = "";
         }
 
         socket.on('receive-chat', (msg) => {
-            if (msg.user === 'SYSTEM') return;
-            const log = document.getElementById('chatLog');
-            if (!log) return;
-            const row = document.createElement('div');
-            row.className = "chat-msg";
-            row.innerHTML = `<span class="user-tag">${msg.user}:</span> <span>${msg.text}</span>`;
-            log.appendChild(row);
-            log.scrollTop = log.scrollHeight;
+            const log = document.getElementById('chatLog'); if (!log) return;
+            const row = document.createElement('div'); row.className = "chat-msg";
+            row.innerHTML = `<span style="color:var(--accent-color); font-weight:bold;">${msg.user}:</span> <span>${msg.text}</span>`;
+            log.appendChild(row); log.scrollTop = log.scrollHeight;
         });
 
         socket.on('room-update', (room) => {
             if (room && room.id === currentActiveRoomId) {
-                const totalCount = room.players.length + room.spectators.length;
-                document.getElementById('roomPopulationCounter').innerText = totalCount;
+                // Population track
             }
         });
 
         function startMatchTimerSequence() {
-            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId);
-            gameTimeRemaining = 120;
-            updateTimerDisplayUI();
-
+            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId); gameTimeRemaining = 120;
             matchTimerCountdownId = setInterval(() => {
                 gameTimeRemaining--;
-                updateTimerDisplayUI();
-                if (gameTimeRemaining <= 0) {
-                    clearInterval(matchTimerCountdownId);
-                    triggerGameLoss();
-                }
+                let mins = Math.floor(gameTimeRemaining / 60).toString().padStart(2, '0'), secs = (gameTimeRemaining % 60).toString().padStart(2, '0');
+                document.getElementById('gameTimer').innerText = `${mins}:${secs}`;
+                if (gameTimeRemaining <= 0) { clearInterval(matchTimerCountdownId); triggerGameLoss(); }
             }, 1000);
         }
 
-        function updateTimerDisplayUI() {
-            const timerDisplay = document.getElementById('gameTimer');
-            if (!timerDisplay) return;
-            let mins = Math.floor(gameTimeRemaining / 60).toString().padStart(2, '0');
-            let secs = (gameTimeRemaining % 60).toString().padStart(2, '0');
-            timerDisplay.innerText = `${mins}:${secs}`;
-        }
-
         function triggerGameLoss() {
-            gameActive = false;
-            if (gameEngineTickIntervalId) clearInterval(gameEngineTickIntervalId);
-            if (matchTimerCountdownId) clearInterval(matchTimerCountdownId);
-
-            if(selectedPlayMode !== 'practice') {
-                userChipsBalance += 50; 
-                socket.emit('update-wallet-chips', { username: currentUsername, finalChips: userChipsBalance });
-            }
-
+            gameActive = false; clearInterval(gameEngineTickIntervalId); clearInterval(matchTimerCountdownId);
             document.getElementById('lossOverlay').classList.remove('hidden');
         }
 
         function restartLocalGame() {
             document.getElementById('lossOverlay').classList.add('hidden');
-            mockBlockX = 4; 
-            mockBlockY = 0; 
-            gameActive = true;
-
-            startMatchTimerSequence();
-            runEngineLoop();
+            gameGrid = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+            currentPiece = generateRandomPiece(); nextPiece = generateRandomPiece();
+            pieceX = 3; pieceY = 0; gameActive = true;
+            startMatchTimerSequence(); runEngineLoop();
         }
 
-        // Updates falling gravity parameters dynamically!
         function runEngineLoop() {
             if (!gameActive) return;
-
-            mockBlockY++; 
-            if (mockBlockY >= 20) {
-                mockBlockY = 0;
-                triggerGameLoss(); 
-                return;
-            }
-
+            if (selectedPlayMode !== "practice") dropPieceInterval();
             drawLocalGameBlocks();
-
-            if (selectedPlayMode === "competition") {
-                socket.emit('sync-board-matrix', {
-                    grid: currentGridMatrix,
-                    score: currentPlayerScore,
-                    level: currentLevel,
-                    lines: totalLinesCleared,
-                    curPlayer: currentUsername
-                });
-            }
-
-            gameEngineTickIntervalId = setTimeout(runEngineLoop, 500);
+            if (selectedPlayMode === "competition") socket.emit('sync-board-matrix', { grid: gameGrid, curPlayer: currentUsername });
+            gameEngineTickIntervalId = setTimeout(runEngineLoop, 600);
         }
 
         function drawLocalGameBlocks() {
-            const localCanvas = document.getElementById('localCanvas');
-            if (localCanvas) {
-                const localCtx = localCanvas.getContext('2d');
-                localCtx.clearRect(0, 0, localCanvas.width, localCanvas.height);
-                localCtx.fillStyle = "#3498db";
-                localCtx.fillRect(mockBlockX * 24, mockBlockY * 20, 24, 20);
+            const canvas = document.getElementById('localCanvas'); if (!canvas) return;
+            const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (gameGrid[r][c]) {
+                        ctx.fillStyle = COLOR_MAP[gameGrid[r][c]];
+                        ctx.fillRect(c * 24, r * 20, 23, 19);
+                    }
+                }
+            }
+            for (let r = 0; r < currentPiece.length; r++) {
+                for (let c = 0; c < currentPiece[r].length; c++) {
+                    if (currentPiece[r][c] && (pieceY + r) >= 0) {
+                        ctx.fillStyle = COLOR_MAP[currentPiece[r][c]];
+                        ctx.fillRect((pieceX + c) * 24, (pieceY + r) * 20, 23, 19);
+                    }
+                }
+            }
+            renderNextPieceWidgetBox();
+        }
+
+        function renderNextPieceWidgetBox() {
+            const canvas = document.getElementById('nextCanvas'); if (!canvas) return;
+            const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, 60, 60);
+            
+            for (let r = 0; r < nextPiece.length; r++) {
+                for (let c = 0; c < nextPiece[r].length; c++) {
+                    if (nextPiece[r][c]) {
+                        ctx.fillStyle = COLOR_MAP[nextPiece[r][c]];
+                        ctx.fillRect(c * 12 + 10, r * 12 + 10, 11, 11);
+                    }
+                }
             }
         }
 
         socket.on('init-lobby', (data) => {
             if(data && data.chips) {
                 userChipsBalance = data.chips;
+                document.getElementById('localChipsDisplay').innerText = userChipsBalance;
             }
         });
 
         socket.on('spectate-frame', (data) => {
             if (selectedPlayMode !== "competition" || !data.boards) return;
-            const opponentId = Object.keys(data.boards).find(id => id !== socket.id);
-            if (opponentId) {
-                renderOpponentCanvasGrid();
-            }
+            const id = Object.keys(data.boards).find(key => key !== socket.id);
+            if (id) renderOpponentCanvasGrid(data.boards[id].grid);
         });
 
-        function renderOpponentCanvasGrid() {
-            const oppCanvas = document.getElementById('opponentCanvas');
-            if (!oppCanvas) return;
-            const oppCtx = oppCanvas.getContext('2d');
-            oppCtx.clearRect(0, 0, oppCanvas.width, oppCanvas.height);
-            oppCtx.fillStyle = "#e74c3c";
-            oppCtx.fillRect(100, 100, 24, 20);
+        function renderOpponentCanvasGrid(oppGrid) {
+            const canvas = document.getElementById('opponentCanvas'); if (!canvas) return;
+            const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (!oppGrid) return;
+            
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (oppGrid[r][c]) {
+                        ctx.fillStyle = COLOR_MAP[oppGrid[r][c]];
+                        ctx.fillRect(c * 24, r * 20, 23, 19);
+                    }
+                }
+            }
         }
     </script>
 </body>

@@ -14,7 +14,6 @@ const pool = new Pool({
 
 const initDatabase = async () => {
     try {
-        // Automatically makes sure the table is ready to save player stats securely
         await pool.query(`
             CREATE TABLE IF NOT EXISTS players (
                 id SERIAL PRIMARY KEY,
@@ -39,7 +38,6 @@ const io = new Server(server, {
 
 const MAX_ROOMS = 10;
 const rooms = {}; 
-const lobbyChat = [];
 
 for (let i = 1; i <= MAX_ROOMS; i++) {
     rooms[i] = { 
@@ -54,7 +52,6 @@ for (let i = 1; i <= MAX_ROOMS; i++) {
         boards: {} 
     };
 }
-// Helper to pull the global top performers from the database cleanly
 async function broadcastGlobalLeaderboard(targetSocket = null) {
     try {
         const result = await pool.query('SELECT username, chips FROM players ORDER BY chips DESC LIMIT 5');
@@ -65,7 +62,6 @@ async function broadcastGlobalLeaderboard(targetSocket = null) {
             io.emit('leaderboard-data', rows);
         }
     } catch (err) {
-        // Fallback mock track if sandbox mode is active offline
         const mockData = [{ username: 'Tetris_King', chips: 1000 }, { username: 'BlockMaster', chips: 500 }];
         if (targetSocket) targetSocket.emit('leaderboard-data', mockData);
         else io.emit('leaderboard-data', mockData);
@@ -90,20 +86,19 @@ io.on('connection', (socket) => {
                 } catch(e) {}
             }
 
-            socket.emit('init-lobby', { rooms, chat: lobbyChat, username, chips: playerChips });
-            // Send the freshly initialized board profile down to the player immediately
+            socket.emit('init-lobby', { rooms, chat: [], username, chips: playerChips });
             broadcastGlobalLeaderboard(socket);
         } catch (err) {
-            socket.emit('init-lobby', { rooms, chat: lobbyChat, username, chips: 250 });
+            socket.emit('init-lobby', { rooms, chat: [], username, chips: 250 });
             broadcastGlobalLeaderboard(socket);
         }
     });
 
+    // FIXED: Router isolates chat distribution exclusively to the target room channel
     socket.on('send-chat', (data) => {
+        if (!socket.roomId) return;
         const msg = { user: data.user, text: data.text, time: new Date().toLocaleTimeString() };
-        lobbyChat.push(msg);
-        if (lobbyChat.length > 40) lobbyChat.shift();
-        io.emit('receive-chat', msg);
+        io.to(`room-${socket.roomId}`).emit('receive-chat', msg);
     });
     socket.on('join-room', ({ roomId, username, chips }) => {
         const room = rooms[roomId];
@@ -143,8 +138,6 @@ io.on('connection', (socket) => {
     socket.on('update-wallet-chips', async ({ username, finalChips }) => {
         try {
             await pool.query('UPDATE players SET chips = \$1 WHERE username = \$2', [finalChips, username]);
-            console.log(`💰 Render SQL Wallet Saved: ${username} -> ${finalChips} Chips`);
-            // Trigger a quick leaderboard database refresh out to all players instantly
             broadcastGlobalLeaderboard();
         } catch (err) {}
     });

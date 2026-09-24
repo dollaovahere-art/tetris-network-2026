@@ -31,7 +31,7 @@
             justify-content: center;
             height: 100vh;
             width: 100vw;
-            overflow: hidden; /* Fully prevents screen scrolling on all devices */
+            overflow: hidden; /* Completely prevents scrolling */
         }
         .hidden { display: none !important; }
 
@@ -359,19 +359,63 @@
 
         const SHAPES = [
             [],
-            [[1,1,1,1]], 
-            [[2,0,0],[2,2,2]], 
-            [[0,0,3],[3,3,3]], 
-            [[4,4],[4,4]], 
-            [[0,5,5],[5,5,0]], 
-            [[0,6,0],[6,6,6]], 
-            [[7,7,0],[0,7,7]]  
+            [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], // I
+            [[2,0,0],[2,2,2],[0,0,0]],                 // J
+            [[0,0,3],[3,3,3],[0,0,0]],                 // L
+            [[4,4],[4,4]],                             // O
+            [[0,5,5],[5,5,0],[0,0,0]],                 // S
+            [[0,6,0],[6,6,6],[0,0,0]],                 // T
+            [[7,7,0],[0,7,7],[0,0,0]]                  // Z
         ];
 
         let currentPiece = null;
         let nextPiece = null;
         let pieceX = 3, pieceY = 0;
         let userChipsBalance = 250;
+        const AudioEngine = {
+            ctx: null,
+            init() { 
+                if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); 
+            },
+            playMove() {
+                this.init(); if (!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'triangle'; osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.05);
+            },
+            playLock() {
+                this.init(); if (!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(90, this.ctx.currentTime);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.1);
+            },
+            playClear() {
+                this.init(); if (!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sine'; osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); 
+                osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.08); 
+                gain.gain.setValueAtTime(0.25, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.2);
+            },
+            playGameOver() {
+                this.init(); if (!this.ctx) return;
+                let osc = this.ctx.createOscillator(), gain = this.ctx.createGain();
+                osc.type = 'sawtooth'; osc.frequency.setValueAtTime(180, this.ctx.currentTime);
+                osc.frequency.linearRampToValueAtTime(60, this.ctx.currentTime + 0.5);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.5);
+                osc.connect(gain); gain.connect(this.ctx.destination);
+                osc.start(); osc.stop(this.ctx.currentTime + 0.5);
+            }
+        };
         window.addEventListener('DOMContentLoaded', () => {
             const cachedUsername = localStorage.getItem('tetris_saved_username');
             if (cachedUsername) {
@@ -430,25 +474,24 @@
             document.getElementById('opponentWrapper').classList.toggle('hidden', selectedPlayMode !== "competition");
             restartLocalGame();
         }
-
         function setupLaptopKeyboardListeners() {
             window.addEventListener('keydown', (e) => {
                 if (!gameActive) return;
                 if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) e.preventDefault();
-                if (e.key === 'ArrowLeft') movePiece(-1);
-                if (e.key === 'ArrowRight') movePiece(1);
-                if (e.key === 'ArrowUp') rotatePiece();
-                if (e.key === 'ArrowDown') dropPieceInterval();
+                if (e.key === 'ArrowLeft') { movePiece(-1); AudioEngine.playMove(); }
+                if (e.key === 'ArrowRight') { movePiece(1); AudioEngine.playMove(); }
+                if (e.key === 'ArrowUp') { rotatePiece(); AudioEngine.playMove(); }
+                if (e.key === 'ArrowDown') { dropPieceInterval(); }
                 drawLocalGameBlocks();
             });
         }
 
         function handleMobileAction(actionType) {
             if (!gameActive) return;
-            if (actionType === 'LEFT') movePiece(-1);
-            if (actionType === 'RIGHT') movePiece(1);
-            if (actionType === 'ROTATE') rotatePiece();
-            if (actionType === 'DROP') dropPieceInterval();
+            if (actionType === 'LEFT') { movePiece(-1); AudioEngine.playMove(); }
+            if (actionType === 'RIGHT') { movePiece(1); AudioEngine.playMove(); }
+            if (actionType === 'ROTATE') { rotatePiece(); AudioEngine.playMove(); }
+            if (actionType === 'DROP') { dropPieceInterval(); }
             drawLocalGameBlocks();
         }
 
@@ -480,11 +523,13 @@
             }
             return false;
         }
+
         function dropPieceInterval() {
             pieceY++;
             if (checkCollision()) {
                 pieceY--;
                 lockPieceIntoGrid();
+                AudioEngine.playLock(); 
                 currentPiece = nextPiece;
                 nextPiece = generateRandomPiece();
                 pieceX = 3; pieceY = 0;
@@ -502,7 +547,6 @@
             }
             clearGridLines();
         }
-
         function clearGridLines() {
             let initialCount = gameGrid.length;
             gameGrid = gameGrid.filter(row => row.some(val => val === 0));
@@ -511,6 +555,7 @@
             while (gameGrid.length < ROWS) gameGrid.unshift(Array(COLS).fill(0));
 
             if (linesClearedThisTurn > 0 && selectedPlayMode !== 'practice') {
+                AudioEngine.playClear(); 
                 let chipsReward = 0;
                 if (linesClearedThisTurn === 1) chipsReward = 10;
                 else if (linesClearedThisTurn === 2) chipsReward = 30;
@@ -520,7 +565,7 @@
                 userChipsBalance += chipsReward;
                 document.getElementById('localChipsDisplay').innerText = userChipsBalance;
                 socket.emit('update-wallet-chips', { username: currentUsername, finalChips: userChipsBalance });
-                socket.emit('send-chat', { user: currentUsername, text: `cleared ${linesClearedThisTurn} line(s) for +${chipsReward} Chips!` });
+                socket.emit('send-chat', { user: 'SYSTEM', text: `cleared ${linesClearedThisTurn} line(s) for +${chipsReward} Chips!` });
             }
         }
 
@@ -537,12 +582,6 @@
             log.appendChild(row); log.scrollTop = log.scrollHeight;
         });
 
-        socket.on('room-update', (room) => {
-            if (room && room.id === currentActiveRoomId) {
-                // Population track
-            }
-        });
-
         function startMatchTimerSequence() {
             if (matchTimerCountdownId) clearInterval(matchTimerCountdownId); gameTimeRemaining = 120;
             matchTimerCountdownId = setInterval(() => {
@@ -555,6 +594,7 @@
 
         function triggerGameLoss() {
             gameActive = false; clearInterval(gameEngineTickIntervalId); clearInterval(matchTimerCountdownId);
+            AudioEngine.playGameOver(); 
             document.getElementById('lossOverlay').classList.remove('hidden');
         }
 
